@@ -83,6 +83,80 @@ Then fill the real production values:
 - `ssl/key.pem`
 - `guacamole_config/user-mapping.xml`
 
+## Replace Existing Legacy Production
+
+Use this only for the first migration from the old production folder to this
+Git-based replica. It preserves the old production app as a reference folder,
+does not copy old runtime data, and starts the tested release in the same
+production path so the existing links keep working.
+
+Bootstrap the script from a temporary checkout on the Ubuntu server:
+
+```bash
+rm -rf /tmp/kai-cutover
+git clone git@github.com:itc251gna/KAI_ARCHIVE.git /tmp/kai-cutover
+cd /tmp/kai-cutover
+git checkout kai-vYYYY-MM-DD-name
+```
+
+If the server needs a specific GitHub deploy key, create it on the server,
+add the public key to the GitHub repository deploy keys, and use it for the
+temporary clone:
+
+```bash
+ssh-keygen -t ed25519 -C "kai-prod" -f ~/.ssh/kai_archive_prod -N ""
+cat ~/.ssh/kai_archive_prod.pub
+
+rm -rf /tmp/kai-cutover
+GIT_SSH_COMMAND="ssh -i ~/.ssh/kai_archive_prod -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+  git clone git@github.com:itc251gna/KAI_ARCHIVE.git /tmp/kai-cutover
+cd /tmp/kai-cutover
+git checkout kai-vYYYY-MM-DD-name
+```
+
+Then run:
+
+```bash
+./scripts/replace_legacy_production.sh kai-vYYYY-MM-DD-name \
+  --app-dir /opt/kai-app \
+  --ssh-key ~/.ssh/kai_archive_prod
+```
+
+Without a custom key:
+
+```bash
+./scripts/replace_legacy_production.sh kai-vYYYY-MM-DD-name \
+  --app-dir /opt/kai-app
+```
+
+The script moves the old app to a path like:
+
+```text
+/opt/kai-app-old-reference-YYYYmmdd-HHMMSS
+```
+
+It copies only:
+
+- `.env`
+- `ssl/`
+- `guacamole_config/user-mapping.xml`
+
+It creates fresh runtime directories:
+
+- `postgres_data/`
+- `backups/`
+- `static/scans/`
+
+It does not copy old production user data.
+
+If the new production app must be removed and the old reference restored:
+
+```bash
+cd /opt/kai-app
+./scripts/restore_legacy_production.sh \
+  --reference-dir /opt/kai-app-old-reference-YYYYmmdd-HHMMSS
+```
+
 ## Deploy Production
 
 Deploy one tested tag:

@@ -49,6 +49,12 @@ Production deploys only tested tags:
 ./scripts/deploy_production.sh kai-vYYYY-MM-DD-name
 ```
 
+For the first replacement of an existing legacy production folder, use:
+
+```bash
+./scripts/replace_legacy_production.sh kai-vYYYY-MM-DD-name --app-dir /opt/kai-app
+```
+
 ## Runtime Secrets
 
 Do not commit production secrets or operational data. Keep these local to each environment:
