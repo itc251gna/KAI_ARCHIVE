@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session, jsonify
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -219,7 +220,10 @@ def _seed_exam_options():
             created = True
 
     if created:
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -284,7 +288,12 @@ with app.app_context():
         admin_pass = required_env("ADMIN_PASSWORD")
         admin = User(username=admin_user, password_hash=generate_password_hash(admin_pass))
         db.session.add(admin)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            if not User.query.filter_by(username=admin_user).first():
+                raise
 
 # --- ΚΡΥΠΤΟΓΡΑΦΗΜΕΝΟ BACKUP ΣΥΣΤΗΜΑ ---
 def backup_system():
