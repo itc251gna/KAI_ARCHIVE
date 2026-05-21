@@ -47,3 +47,6 @@ venv/
 # Logs
 logs/
 *.log
+
+# Local deployment state
+/.deploy/

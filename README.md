@@ -1,64 +1,63 @@
-# 🏥 Κέντρο Αεροπορικής Ιατρικής (K.A.I.) - Medical Management System
-### *Enterprise Interoperability & Medical Security (ISO 27799)*
+# KAI App
 
-![HL7 FHIR](https://img.shields.io/badge/HL7-FHIR%20R4-green.svg)
-![HL7 v2.x](https://img.shields.io/badge/HL7-v2.x%20Legacy-blue.svg)
-![Security](https://img.shields.io/badge/Security-ISO%2027799-red.svg)
-![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED.svg)
+KAI App is a Dockerized Flask/PostgreSQL application for medical examination workflows, document generation, audit logging, and HIS access through Apache Guacamole.
 
-Το σύστημα Κ.Α.Ι. είναι μια προηγμένη πλατφόρμα διαχείρισης υγειονομικών εξετάσεων, σχεδιασμένη για την Πολεμική Αεροπορία. Συνδυάζει την αυστηρή ασφάλεια δεδομένων με την πλήρη διαλειτουργικότητα.
+## Active Environments
 
----
+- Local replica: `docker-compose.local.yml`
+- Production-like deployment: `docker-compose.remote.yml`
 
-## 🔌 Διαλειτουργικότητα (HL7 Interoperability)
+The default `docker-compose.yml` entrypoint was intentionally removed to avoid ambiguity.
 
-Το σύστημα είναι πλήρως συμβατό με το διεθνές ιατρικό πρωτόκολλο **HL7**, επιτρέποντας τη διασύνδεση με συστήματα HIS.
+## Local Run
 
-### 🟢 Modern Interface: HL7 FHIR (R4)
-* **Resource Mapping:** Πλήρης υποστήριξη για `Patient` και `DiagnosticReport`.
-* **FHIR Bundles:** Εξαγωγή πλήρους ιατρικού ιστορικού σε δομημένη μορφή JSON.
-* **REST API:** Πρόσβαση μέσω του endpoint `/api/fhir/Patient/<AMKA>`.
+```powershell
+docker compose -f docker-compose.local.yml up -d --build
+```
 
-### 🔵 Legacy Interface: HL7 v2.x (ER7)
-* **ORU Export:** Εξαγωγή ιστορικού σε μορφή `ORU^R01` (Segments: MSH, PID, OBR, OBX).
-* **Greek Support:** Υποστήριξη Ελληνικών (UTF-8 / ISO-8859-7) μέσω του πεδίου `MSH-18`.
+Open:
 
----
+```text
+https://localhost:8443
+```
 
-## 🚀 Βασικά Χαρακτηριστικά
+## Verify
 
-* **ISO 27799 Compliance:** Πλήρες Audit Trail (Ιχνηλασιμότητα) για κάθε ενέργεια.
-* **HIS Integration:** Ενσωματωμένο RDP (Guacamole) για άμεση πρόσβαση στο HIS.
-* **Smart Pre-fill:** Αυτόματη προσυμπλήρωση στοιχείων από το ιστορικό εξετάσεων.
-* **Centralized Dashboard:** Διαχείριση εξετάσεων, e-Ραντεβού και Google Forms.
+```powershell
+.\scripts\verify_local.ps1
+```
 
----
+Full local verification:
 
-## 🏗️ Τεχνική Αρχιτεκτονική
+```powershell
+.\scripts\verify_local.ps1 -StartStack -SmokeTest
+```
 
-* **Backend:** Python 3.11 / Flask.
-* **Database:** PostgreSQL.
-* **Security:** API Key Authentication (X-API-KEY).
-* **Infrastructure:** Docker Containerization.
+## Release Workflow
 
----
+The approved workflow is documented in [docs/WORKFLOW.md](docs/WORKFLOW.md).
 
-## 📦 Οδηγίες Εγκατάστασης & Δοκιμής
+Short version:
 
-<br>
+```powershell
+.\scripts\create_release.ps1 -Tag kai-vYYYY-MM-DD-name -CommitMessage "Update KAI app" -Push
+```
 
-<b>1. Εκκίνηση Υπηρεσιών</b>
-<p>Χρησιμοποιήστε το Docker Compose για να σηκώσετε όλο το stack:</p>
+Production deploys only tested tags:
 
-<pre><code>docker compose -f docker-compose.local.yml up -d --build</code></pre>
+```bash
+./scripts/deploy_production.sh kai-vYYYY-MM-DD-name
+```
 
-<hr>
+## Runtime Secrets
 
-<b>2. Πρόσβαση στο FHIR API</b>
-<p>Ανάκτηση ιστορικού σε μορφή JSON Bundle:</p>
+Do not commit production secrets or operational data. Keep these local to each environment:
 
-<pre><code>GET /api/fhir/Patient/[AMKA]</code></pre>
+- `.env`
+- `ssl/`
+- `postgres_data/`
+- `backups/`
+- `static/scans/`
+- `guacamole_config/user-mapping.xml`
 
----
-
-*Αναπτύχθηκε για το Κέντρο Αεροπορικής Ιατρικής με έμφαση στη διαλειτουργικότητα και την ασφάλεια.*
+Use `.env.example` and `guacamole_config/user-mapping.example.xml` as templates.

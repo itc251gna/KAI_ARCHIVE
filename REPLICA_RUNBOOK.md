@@ -86,6 +86,12 @@ For a production-like remote host, use:
 docker compose -f docker-compose.remote.yml up -d --build
 ```
 
+For the recommended tag-based production flow, use [docs/WORKFLOW.md](docs/WORKFLOW.md):
+
+```bash
+./scripts/deploy_production.sh kai-vYYYY-MM-DD-name
+```
+
 Remote assumptions:
 
 - The host owns port 443.
