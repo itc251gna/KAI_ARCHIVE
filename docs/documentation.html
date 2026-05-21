@@ -31,7 +31,7 @@
     <p>Αυτό το έγγραφο προορίζεται για τους Μηχανικούς Λογισμικού (Software Engineers) και τους Διαχειριστές Συστημάτων (System Admins) που θα αναλάβουν τη συντήρηση, αποσφαλμάτωση (debugging) και επέκταση της πλατφόρμας του Κ.Α.Ι.</p>
 
     <h2>1. Αρχιτεκτονική & Υποδομή (DevOps & Docker)</h2>
-    <p>Η εφαρμογή ακολουθεί αρχιτεκτονική Microservices μέσω του <code>docker-compose.yml</code>. Κάθε υπηρεσία τρέχει σε απόλυτα απομονωμένο περιβάλλον:</p>
+    <p>Η εφαρμογή ακολουθεί αρχιτεκτονική Microservices μέσω Docker Compose. Το local περιβάλλον χρησιμοποιεί <code>docker-compose.local.yml</code>, ενώ το production-like περιβάλλον χρησιμοποιεί <code>docker-compose.remote.yml</code>.</p>
     
     <h3>1.1 Αρχεία Υποδομής</h3>
     <table>
@@ -40,8 +40,8 @@
             <th>Ρόλος & Λειτουργία</th>
         </tr>
         <tr>
-            <td><code>docker-compose.yml</code></td>
-            <td>Ο "ενορχηστρωτής". Σηκώνει τα containers (Nginx, Flask, Postgres, Guacamole/Tomcat, Guacd). Ορίζει τα εσωτερικά δίκτυα (bridge networks) ώστε η βάση δεδομένων να μην είναι εκτεθειμένη στο εξωτερικό δίκτυο.</td>
+            <td><code>docker-compose.local.yml</code> / <code>docker-compose.remote.yml</code></td>
+            <td>Οι ενορχηστρωτές του local και remote περιβάλλοντος. Σηκώνουν τα containers (Nginx, Flask, Postgres, Guacamole/Tomcat, Guacd) με ξεκάθαρο διαχωρισμό ανά περιβάλλον.</td>
         </tr>
         <tr>
             <td><code>Dockerfile</code></td>
@@ -87,14 +87,14 @@
     <h3>3.3 Ενσωμάτωση Μητρώου Πολιτών (SOAP API)</h3>
     <p>Η εφαρμογή δεν βασίζεται σε απλές φόρμες, αλλά "μιλάει" με εθνικά μητρώα.</p>
     <ul>
-        <li><code>CivilRegistryAPI_live.wsdl</code>: Το επίσημο αρχείο περιγραφής των Web Services του Μητρώου.</li>
-        <li><code>test_wsdl.py</code> & <code>app.py</code>: Μέσω της βιβλιοθήκης <strong>Zeep</strong>, η εφαρμογή κατασκευάζει XML αιτήματα (SOAP envelopes), τα στέλνει στο Μητρώο Πολιτών, λαμβάνει το XML response, το κάνει parse και γεμίζει αυτόματα τις φόρμες (Όνομα, Επώνυμο, Πατρώνυμο κλπ).</li>
+        <li><code>docs/reference/CivilRegistryAPI_live.wsdl</code>: Αρχείο αναφοράς για την περιγραφή των Web Services του Μητρώου.</li>
+        <li><code>tools/test_wsdl.py</code> & <code>app.py</code>: Μέσω της βιβλιοθήκης <strong>Zeep</strong>, η εφαρμογή κατασκευάζει XML αιτήματα (SOAP envelopes), τα στέλνει στο Μητρώο Πολιτών, λαμβάνει το XML response, το κάνει parse και γεμίζει αυτόματα τις φόρμες (Όνομα, Επώνυμο, Πατρώνυμο κλπ).</li>
     </ul>
 
     <h3>3.4 Αυτοματισμός Εγγράφων (Document Generation)</h3>
     <p>Το σύστημα λειτουργεί ως μηχανή παραγωγής γνωματεύσεων (Mail Merge logic):</p>
     <ul>
-        <li>Στη διαδρομή της δημιουργίας εγγράφου, η Flask διαβάζει τα πρότυπα <code>loipoi.docx</code>, <code>certificate.docx</code>, <code>iptamenoi.docx</code>.</li>
+        <li>Στη διαδρομή της δημιουργίας εγγράφου, η Flask διαβάζει το βασικό πρότυπο <code>HER_KAI.docx</code> και, για τις βεβαιώσεις, το <code>certificate.docx</code>.</li>
         <li>Εντοπίζει συγκεκριμένα "tags" ή bookmarks μέσα στο Word και τα αντικαθιστά με τα δεδομένα που αντλήθηκαν από το API και το <code>exam_form.html</code>.</li>
         <li>Επιστρέφει το δυναμικά παραγόμενο αρχείο στον χρήστη για κατέβασμα/εκτύπωση.</li>
     </ul>

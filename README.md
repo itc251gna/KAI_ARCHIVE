@@ -50,7 +50,7 @@
 <b>1. Εκκίνηση Υπηρεσιών</b>
 <p>Χρησιμοποιήστε το Docker Compose για να σηκώσετε όλο το stack:</p>
 
-<pre><code>docker-compose up -d --build</code></pre>
+<pre><code>docker compose -f docker-compose.local.yml up -d --build</code></pre>
 
 <hr>
 

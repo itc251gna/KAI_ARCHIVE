@@ -10,7 +10,7 @@ Legacy local KAI App source folder.
 
 - `app.py`, templates, static assets, document templates, Nginx config, Dockerfile, requirements, SSL folder, and Guacamole config were copied from the local dev project.
 - Production HTTP checks showed the sampled static assets match local dev by SHA-256.
-- The original `docker-compose.yml` is preserved as copied.
+- The active Docker Compose entrypoints are `docker-compose.local.yml` for workstation testing and `docker-compose.remote.yml` for production-like deployment.
 
 ## What Is Intentionally Not Copied
 
@@ -58,7 +58,7 @@ Local certificate note:
 Updated on 2026-05-20:
 
 - Draft generation uses one Word template only: `static/templates/HER_KAI.docx`.
-- The old draft split between `iptamenoi.docx` and `loipoi.docx` is no longer used by `app.py`.
+- The old draft split between `iptamenoi.docx` and `loipoi.docx` is no longer used by `app.py`, and those legacy templates are not part of the active repo.
 - Exam purpose options are stored in the `exam_option` database table with `option_type='purpose'`.
 - Exam category options are stored in the `exam_option` database table with `option_type='category'`.
 - `exam_options.py` is the seed/default source used to populate missing DB entries on app boot.

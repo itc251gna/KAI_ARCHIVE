@@ -23,7 +23,7 @@ Last updated: 2026-05-20
 
 - Draft output now uses only `static/templates/HER_KAI.docx`.
 - `app.py` no longer selects between `iptamenoi.docx` and `loipoi.docx`.
-- Old template copies, if needed for reference, are under `static/templates/devs_backup`.
+- Old draft template copies are excluded from the active repo; use Git history or local backup folders only for reference.
 - `static/templates/certificate.docx` remains separate and was not changed.
 
 ## Exam Option Sources

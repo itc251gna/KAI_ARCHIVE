@@ -1039,5 +1039,5 @@ def appointments():
 
 if __name__ == '__main__':
     # Προειδοποίηση αν κάποιος πάει να το τρέξει τοπικά χωρίς Docker/Gunicorn
-    print("ΠΡΟΣΟΧΗ: Εκτελείτε τον Development Server. Για παραγωγή, χρησιμοποιήστε το Docker / START_KAI.bat")
+    print("ΠΡΟΣΟΧΗ: Εκτελείτε τον Development Server. Για παραγωγή, χρησιμοποιήστε Docker Compose.")
     app.run(host='0.0.0.0', port=5000)
