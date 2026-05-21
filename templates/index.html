@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        
+        <div class="card shadow-sm mb-4">
+            
+            <div class="card-header border-bottom-0 pt-3 pb-0" style="background: rgba(255,255,255,0.5);">
+                <ul class="nav nav-tabs border-bottom-0" id="dashboardTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold text-primary px-4" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab" aria-selected="true">
+                            🩺 Καθημερινές Εργασίες
+                        </button>
+                    </li>
+                    {% if current_user.username == 'admin' %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold text-secondary px-4" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab" aria-selected="false">
+                            ⚙️ Σύστημα & Διαχείριση
+                        </button>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold text-dark px-4" id="his-tab" data-bs-toggle="tab" data-bs-target="#his" type="button" role="tab" aria-controls="his" aria-selected="false">
+                            🖥️ Σύστημα Υγείας (HIS)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold text-info px-4" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments" type="button" role="tab" aria-selected="false">
+                            📅 Ηλεκτρονικά Ραντεβού
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold text-info px-4" id="help-tab" data-bs-toggle="tab" data-bs-target="#help" type="button" role="tab" aria-selected="false">
+                            ℹ️ Πληροφορίες
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body p-4 pt-4" style="background: rgba(255,255,255,0.7); border-top: 1px solid rgba(0,0,0,0.05);">
+                <div class="tab-content" id="dashboardTabsContent">
+                    
+                    <div class="tab-pane fade show active" id="tasks" role="tabpanel" tabindex="0">
+                        
+                        <div class="bg-white p-4 rounded-3 shadow-sm border mb-4">
+                            <h5 class="text-primary mb-3">Νέα Εξέταση (Μέσω ΗΔΙΚΑ)</h5>
+                            <form id="searchForm" action="{{ url_for('search_post') }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <div class="input-group input-group-lg shadow-sm">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-primary"></i></span>
+                                    <input type="text" name="amka" id="amka" class="form-control border-start-0 ps-0" 
+                                           placeholder="Εισάγετε ΑΜΚΑ για αναζήτηση ή νέα εξέταση..." 
+                                           required maxlength="11" pattern="\d*">
+                                    <button type="submit" class="btn btn-primary px-4 fw-bold" id="searchBtn">
+                                        <span id="btnSpinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+                                        <span id="btnText">Αναζήτηση</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="bg-white p-3 rounded-3 shadow-sm border mb-4">
+                            <h6 class="text-secondary mb-3">Επεξεργασία Υπάρχουσας Εξέτασης</h6>
+                            <form action="/search_by_id" method="POST" class="d-flex gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <input type="number" class="form-control bg-light" id="exam_id" name="exam_id" required placeholder="Εισάγετε ID (π.χ. 42)">
+                                <button type="submit" class="btn btn-secondary px-4 text-nowrap">Άνοιγμα</button>
+                            </form>
+                        </div>
+
+                        <div class="row g-2 mt-2">
+                            <div class="col-sm-6">
+                                <a href="/download_medical_history" class="btn btn-outline-primary btn-glass py-2 w-100 fw-bold shadow-sm" target="_blank">
+                                    🖨️ Εκτύπωση Δελτίου Ιατρικού Ιστορικού
+                                </a>
+                            </div>
+                            <div class="col-sm-6">
+                                <a href="/pending_exams" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm">
+                                    ⏳ Λίστα Εκκρεμών
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {% if current_user.username == 'admin' %}
+                    <div class="tab-pane fade" id="admin" role="tabpanel" tabindex="0">
+                        <div class="text-center py-4">
+                            <h5 class="text-secondary mb-4">Εργαλεία Διαχειριστή Συστήματος</h5>
+                            
+                            <div class="d-grid gap-3 col-md-8 mx-auto">
+                                <a href="/manage_users" class="btn btn-primary btn-lg shadow-sm">
+                                    👥 Διαχείριση Χρηστών Συστήματος
+                                </a>
+                                <a href="/manage_exam_options" class="btn btn-outline-primary btn-lg shadow-sm">
+                                    Διαχείριση Σκοπών & Κατηγοριών Εξέτασης
+                                </a>
+                                <a href="/audit_logs" class="btn btn-dark btn-lg shadow-sm">
+                                    🔒 Προβολή Ιστορικού Ενεργειών (Audit Logs)
+                                </a>
+                                <a href="/force_backup" class="btn btn-outline-success mt-2">
+                                    💾 Λήψη Χειροκίνητου Backup
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="tab-pane fade" id="his" role="tabpanel" tabindex="0">
+                        <div class="text-center py-5">
+                            <h4 class="text-info mb-3">Συνδεθείτε στο Σύστημα Υγείας (HIS) - Απομακρυσμένος Έλεγχος</h4>
+                            <p class="text-muted mb-4">Χρησιμοποιήστε του προσωπικούς κωδικούς που σας έχουν δωθεί στην εφαρμογή ΚΑΙ</p>
+                            <a href="/his_system" class="btn btn-info btn-lg w-60 fw-bold shadow-sm text-white">
+                                🖥️ Άνοιγμα Συστήματος Υγείας (HIS)
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="appointments" role="tabpanel" tabindex="0">
+                        <div class="text-center py-5">
+                            <h4 class="text-info mb-3">Συνδεθείτε στο σύστημα Ηλεκτρονικών Ραντεβού του ΟΠΣΥΕΔ</h4>
+                            <p class="text-muted mb-4">Χρησιμοποιήστε τους προσωπικούς κωδικούς θέσης που σας έχουν δοθεί από τον ΟΠΣΥΕΔ</p>
+                            
+                            <div class="bg-white p-4 rounded-3 border border-info mx-auto mb-4 text-start shadow-sm" style="max-width: 550px;">
+                                <h6 class="text-info fw-bold mb-2">📝 Δελτίο Ιατρικού Ιστορικού (Google Form)</h6>
+                                <p class="text-muted small mb-3">Συμπληρώστε ηλεκτρονικά το ιατρικό ιστορικό του εξεταζόμενου πριν τη μετάβαση στην πλατφόρμα των ραντεβού.</p>
+                                
+                                <a href="https://docs.google.com/forms/d/e/1FAIpQLSegAk9ZzpD5MceQnSa8Td7NS5wKi_KtiRKWfekfsrt8rHdt9A/viewform?usp=sharing&ouid=107977611692064663914" 
+                                   target="_blank" 
+                                   class="btn btn-outline-info w-100 fw-bold"
+                                   id="googleFormBtn"
+                                   onclick="return checkFormAvailability(this, event);">
+                                    Άνοιγμα Φόρμας Ιστορικού
+                                </a>
+                                
+                                <div id="formUnavailableMsg" class="d-none text-danger small mt-2 fw-bold text-center">
+                                    ⚠️ Ο σύνδεσμος για τη φόρμα δεν είναι προσωρινά διαθέσιμος.
+                                </div>
+                            </div>
+
+                            <a href="{{ url_for('appointments') }}" class="btn btn-success text-white shadow-sm fw-bold px-4 py-2">
+                                📅 Σύστημα e-Ραντεβού
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="help" role="tabpanel" tabindex="0">
+                        <div class="text-center py-5">
+                            <h4 class="text-info mb-3">Χρειάζεστε βοήθεια με το σύστημα;</h4>
+                            <p class="text-muted mb-4">Διαβάστε το αναλυτικό εγχειρίδιο για τις διαδικασίες δημιουργίας, εκτύπωσης και ολοκλήρωσης των εξετάσεων.</p>
+                            <a href="/manual" class="btn btn-info text-white btn-lg shadow-sm px-5 rounded-pill">
+                                📖 Άνοιγμα Εγχειριδίου
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Script για το loading spinner στο κουμπί αναζήτησης
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+        var amkaInput = document.getElementById('amka').value.trim();
+        if(amkaInput !== "") {
+            var btn = document.getElementById('searchBtn');
+            btn.disabled = true; 
+            document.getElementById('btnText').innerText = ' Επικοινωνία με ΗΔΙΚΑ... ';
+            document.getElementById('btnSpinner').classList.remove('d-none'); 
+            this.submit();
+        }
+    });
+
+    // ΝΕΟ: Script ελέγχου διαθεσιμότητας του link της Google Form
+    function checkFormAvailability(element, event) {
+        var href = element.getAttribute('href');
+        
+        // Εάν το link είναι κενό, null, ή έχει μόνο '#'
+        if (!href || href.trim() === '' || href === '#') {
+            event.preventDefault(); // Ακυρώνει τη μετάβαση
+
+            // Αλλάζει την εμφάνιση του κουμπιού σε "Ανενεργό/Γκρι"
+            element.classList.remove('btn-outline-info');
+            element.classList.add('btn-secondary', 'disabled');
+            element.innerHTML = '🚫 Μη Διαθέσιμο';
+            
+            // Εμφανίζει το κομψό μήνυμα σφάλματος
+            document.getElementById('formUnavailableMsg').classList.remove('d-none');
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock %}

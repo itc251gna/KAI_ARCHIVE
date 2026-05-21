@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">🖥️ Σύστημα Υγείας (HIS) - Απομακρυσμένος Έλεγχος</h5>
+        <a href="/" class="btn btn-light btn-sm">Επιστροφή</a>
+    </div>
+    <div class="card-body p-0" style="height: 75vh; overflow: hidden;">
+        <iframe id="guacamoleFrame" 
+                style="width: 100%; height: 100%; border: none;"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+                allow="downloads">
+        </iframe>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var iframe = document.getElementById("guacamoleFrame");
+        
+        // ΑΛΛΑΓΗ ΓΙΑ NGINX REVERSE PROXY:
+        // Χρησιμοποιούμε σχετικό μονοπάτι. Το Nginx αναλαμβάνει να το δρομολογήσει 
+        // εσωτερικά στην πόρτα 8080 του Guacamole, διατηρώντας το HTTPS ενεργό!
+        iframe.src = "/guacamole/?kai_brand=" + Date.now();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,758 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://moi.gov.cy/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" targetNamespace="http://moi.gov.cy/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://moi.gov.cy/">
+      <s:element name="GetPhysicalEntity">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="oGetPhysicalEntityReq" type="tns:GetPhysicalEntityReq" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetPhysicalEntityReq">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIRequestHeader" />
+          <s:element minOccurs="0" maxOccurs="1" name="pin" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="APIRequestHeader">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="username" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="password" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ipAddress" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="vendorSoftwareId" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="vendorReferenceCode" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetPhysicalEntityResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetPhysicalEntityResult" type="tns:GetPhysicalEntityResp" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetPhysicalEntityResp">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIResponseHeader" />
+          <s:element minOccurs="0" maxOccurs="1" name="physicalEntities" type="tns:ArrayOfPhysicalEntity" />
+          <s:element minOccurs="1" maxOccurs="1" name="errorCode" type="tns:GetPhysicalEntityErrorEnum" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="APIResponseHeader">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="errorCode" type="tns:APIErrorEnum" />
+          <s:element minOccurs="1" maxOccurs="1" name="timestamp" type="s:dateTime" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="APIErrorEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="OK" />
+          <s:enumeration value="USER_AUTHENTICATION_FAILURE" />
+          <s:enumeration value="INTERNAL_ERROR" />
+          <s:enumeration value="EXCEEDED_THROTTLE" />
+          <s:enumeration value="USER_NOT_SUBSCRIBED_TO_PRODUCT" />
+          <s:enumeration value="SUBSCRIPTION_INACTIVE_OR_SUSPENDED" />
+          <s:enumeration value="VENDOR_SOFTWARE_INACTIVE" />
+          <s:enumeration value="VENDOR_SOFTWARE_INVALID" />
+          <s:enumeration value="SERVICE_NOT_AVAILABLE_IN_PRODUCT" />
+          <s:enumeration value="NO_SESSION" />
+          <s:enumeration value="TOO_MANY_REQUESTS" />
+          <s:enumeration value="SERVICE_NOT_AVAILABLE_FOR_LOGIN" />
+        </s:restriction>
+      </s:simpleType>
+      <s:complexType name="ArrayOfPhysicalEntity">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="PhysicalEntity" nillable="true" type="tns:PhysicalEntity" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="PhysicalEntity">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="PIN" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LastName" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="BirthDate" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="Sex" type="tns:GenderEnum" />
+          <s:element minOccurs="0" maxOccurs="1" name="Address_1" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Address_2" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Address_3" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="TelephoneNo" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Community" type="tns:CommunityEnum" />
+          <s:element minOccurs="0" maxOccurs="1" name="Nationality" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="IsAlive" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="DeathDate" type="s:dateTime" />
+          <s:element minOccurs="0" maxOccurs="1" name="FatherPin" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FatherFirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="RefugeeBookletNo" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="GenderEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="MALE" />
+          <s:enumeration value="FEMALE" />
+          <s:enumeration value="OTHER" />
+          <s:enumeration value="UNSPECIFIED" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="CommunityEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="GREEK" />
+          <s:enumeration value="TURKISH" />
+          <s:enumeration value="OTHER" />
+          <s:enumeration value="UNSPECIFIED" />
+          <s:enumeration value="NOT_APPLICABLE" />
+        </s:restriction>
+      </s:simpleType>
+      <s:simpleType name="GetPhysicalEntityErrorEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="OK" />
+          <s:enumeration value="API_ERROR" />
+          <s:enumeration value="PIN_INVALID" />
+          <s:enumeration value="NO_RESULTS" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetPhysicalEntityWithParams">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="oGetPhysicalEntityWithParamsReq" type="tns:GetPhysicalEntityWithParamsReq" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetPhysicalEntityWithParamsReq">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIRequestHeader" />
+          <s:element minOccurs="1" maxOccurs="1" name="Citizentype" type="tns:CitizenTypeEnum" />
+          <s:element minOccurs="0" maxOccurs="1" name="Forenames" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Surname" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="CitizenTypeEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="NATIVE" />
+          <s:enumeration value="ALIEN" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetPhysicalEntityWithParamsResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetPhysicalEntityWithParamsResult" type="tns:GetPhysicalEntityWithParamsResp" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetPhysicalEntityWithParamsResp">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIResponseHeader" />
+          <s:element minOccurs="0" maxOccurs="1" name="physicalEntities" type="tns:ArrayOfPhysicalEntity" />
+          <s:element minOccurs="1" maxOccurs="1" name="errorCode" type="tns:GetPhysicalEntityWithParamsErrorEnum" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="GetPhysicalEntityWithParamsErrorEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="OK" />
+          <s:enumeration value="API_ERROR" />
+          <s:enumeration value="SURNAME_INVALID" />
+          <s:enumeration value="FORNAMES_INVALID" />
+          <s:enumeration value="BIRTHDATE_INVALID" />
+          <s:enumeration value="NO_RESULTS" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetDeathsByDate">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="oGetDeathsByDateReq" type="tns:GetDeathsByDateReq" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetDeathsByDateReq">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIRequestHeader" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtFrom" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtTo" type="s:dateTime" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetDeathsByDateResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetDeathsByDateResult" type="tns:GetDeathsByDateResp" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetDeathsByDateResp">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIResponseHeader" />
+          <s:element minOccurs="0" maxOccurs="1" name="physicalEntities" type="tns:ArrayOfPhysicalEntity" />
+          <s:element minOccurs="1" maxOccurs="1" name="errorCode" type="tns:GetDeathsByDateErrorEnum" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="GetDeathsByDateErrorEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="OK" />
+          <s:enumeration value="API_ERROR" />
+          <s:enumeration value="DATE_FROM_INVALID" />
+          <s:enumeration value="DATE_TO_INVALID" />
+          <s:enumeration value="DATES_NOT_IN_SAME_YEAR" />
+          <s:enumeration value="NO_RESULTS" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetAliensAppliedByDate">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="oGetAliensAppliedByDateReq" type="tns:GetAliensAppliedByDateReq" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetAliensAppliedByDateReq">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIRequestHeader" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtFrom" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtTo" type="s:dateTime" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetAliensAppliedByDateResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetAliensAppliedByDateResult" type="tns:GetAliensAppliedByDateResp" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetAliensAppliedByDateResp">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIResponseHeader" />
+          <s:element minOccurs="0" maxOccurs="1" name="alienEntities" type="tns:ArrayOfAlienEntity" />
+          <s:element minOccurs="1" maxOccurs="1" name="errorCode" type="tns:GetAliensAppliedByDateErrorEnum" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfAlienEntity">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="AlienEntity" nillable="true" type="tns:AlienEntity" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="AlienEntity">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Id" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="ARCNo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FileNo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MiddleName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LastName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BirthDate" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Sex" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="CountryOfBirth" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="PlaceOfBirth" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Nationality" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Occupation" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="PassportNo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="PassportNat" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="PassportIssued" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="PassportExpired" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Address1" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Address2" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="EmpAddress1" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="EmpAddress2" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="EmpTelNo" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="GetAliensAppliedByDateErrorEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="OK" />
+          <s:enumeration value="API_ERROR" />
+          <s:enumeration value="DATE_FROM_INVALID" />
+          <s:enumeration value="DATE_TO_INVALID" />
+          <s:enumeration value="DATES_NOT_IN_SAME_YEAR" />
+          <s:enumeration value="NO_RESULTS" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetAlienPermitsIssuedByDate">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="oGetAlienPermitsIssuedByDateReq" type="tns:GetAlienPermitsIssuedByDateReq" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetAlienPermitsIssuedByDateReq">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIRequestHeader" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtFrom" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtTo" type="s:dateTime" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetAlienPermitsIssuedByDateResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetAlienPermitsIssuedByDateResult" type="tns:GetAlienPermitsIssuedByDateResp" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetAlienPermitsIssuedByDateResp">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIResponseHeader" />
+          <s:element minOccurs="0" maxOccurs="1" name="alienPermits" type="tns:ArrayOfAlienPermit" />
+          <s:element minOccurs="1" maxOccurs="1" name="errorCode" type="tns:GetAlienPermitsIssuedByDateErrorEnum" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfAlienPermit">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="AlienPermit" nillable="true" type="tns:AlienPermit" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="AlienPermit">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="ApplNo" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="ApplType" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="AprovalDate" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ValidUntilType" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ValidUntilNo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ValidUntilDate" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="AlienId" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="PassportNo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Nationality" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LastName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Occupation" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="AlienCategory" type="s:int" />
+          <s:element minOccurs="1" maxOccurs="1" name="AlienResidenceNature" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="GetAlienPermitsIssuedByDateErrorEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="OK" />
+          <s:enumeration value="API_ERROR" />
+          <s:enumeration value="DATE_FROM_INVALID" />
+          <s:enumeration value="DATE_TO_INVALID" />
+          <s:enumeration value="DATES_NOT_IN_SAME_YEAR" />
+          <s:enumeration value="NO_RESULTS" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetPassportsIssuedByDate">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="oGetPassportsIssuedByDateReq" type="tns:GetPassportsIssuedByDateReq" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetPassportsIssuedByDateReq">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIRequestHeader" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtFrom" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtTo" type="s:dateTime" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetPassportsIssuedByDateResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetPassportsIssuedByDateResult" type="tns:GetPassportsIssuedByDateResp" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetPassportsIssuedByDateResp">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIResponseHeader" />
+          <s:element minOccurs="0" maxOccurs="1" name="Passports" type="tns:ArrayOfPassport" />
+          <s:element minOccurs="1" maxOccurs="1" name="errorCode" type="tns:GetPassportsIssuedByDateErrorEnum" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfPassport">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="Passport" nillable="true" type="tns:Passport" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Passport">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Id" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="PIN" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="PassportNo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="IssuedDate" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ExpireDate" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LastName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LatinFirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LatinLastName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BirthDate" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Sex" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="CountryOfBirth" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="GetPassportsIssuedByDateErrorEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="OK" />
+          <s:enumeration value="API_ERROR" />
+          <s:enumeration value="DATE_FROM_INVALID" />
+          <s:enumeration value="DATE_TO_INVALID" />
+          <s:enumeration value="DATES_NOT_IN_SAME_YEAR" />
+          <s:enumeration value="NO_RESULTS" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetIdentityCardsIssuedByDate">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="oGetIdentityCardsIssuedByDateReq" type="tns:GetIdentityCardsIssuedByDateReq" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetIdentityCardsIssuedByDateReq">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIRequestHeader" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtFrom" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtTo" type="s:dateTime" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetIdentityCardsIssuedByDateResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetIdentityCardsIssuedByDateResult" type="tns:GetIdentityCardsIssuedByDateResp" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetIdentityCardsIssuedByDateResp">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIResponseHeader" />
+          <s:element minOccurs="0" maxOccurs="1" name="IdentityCards" type="tns:ArrayOfIdentityCard" />
+          <s:element minOccurs="1" maxOccurs="1" name="errorCode" type="tns:GetIdentityCardsIssuedByDateErrorEnum" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfIdentityCard">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="IdentityCard" nillable="true" type="tns:IdentityCard" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="IdentityCard">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Id" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="IdNo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="IssuedDate" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="ExpireDate" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LastName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LatinFirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LatinLastName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BirthDate" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Sex" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="Nationality" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="DocId" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="IssuanceNo" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="GetIdentityCardsIssuedByDateErrorEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="OK" />
+          <s:enumeration value="API_ERROR" />
+          <s:enumeration value="DATE_FROM_INVALID" />
+          <s:enumeration value="DATE_TO_INVALID" />
+          <s:enumeration value="DATES_NOT_IN_SAME_YEAR" />
+          <s:enumeration value="NO_RESULTS" />
+        </s:restriction>
+      </s:simpleType>
+      <s:element name="GetDeathCertificatesIssuedByDate">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="oGetDeathCertificatesIssuedByDateReq" type="tns:GetDeathCertificatesIssuedByDateReq" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetDeathCertificatesIssuedByDateReq">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIRequestHeader" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtFrom" type="s:dateTime" />
+          <s:element minOccurs="1" maxOccurs="1" name="dtTo" type="s:dateTime" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetDeathCertificatesIssuedByDateResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetDeathCertificatesIssuedByDateResult" type="tns:GetDeathCertificatesIssuedByDateResp" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="GetDeathCertificatesIssuedByDateResp">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="header" type="tns:APIResponseHeader" />
+          <s:element minOccurs="0" maxOccurs="1" name="DeathCertificates" type="tns:ArrayOfDeathCertificate" />
+          <s:element minOccurs="1" maxOccurs="1" name="errorCode" type="tns:GetDeathCertificatesIssuedByDateErrorEnum" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfDeathCertificate">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="DeathCertificate" nillable="true" type="tns:DeathCertificate" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="DeathCertificate">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="Id" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="PIN" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CertNo" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="IssuedDate" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="FirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LastName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LatinFirstName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LatinLastName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="BirthDate" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="Sex" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="DeathDate" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:simpleType name="GetDeathCertificatesIssuedByDateErrorEnum">
+        <s:restriction base="s:string">
+          <s:enumeration value="OK" />
+          <s:enumeration value="API_ERROR" />
+          <s:enumeration value="DATE_FROM_INVALID" />
+          <s:enumeration value="DATE_TO_INVALID" />
+          <s:enumeration value="DATES_NOT_IN_SAME_YEAR" />
+          <s:enumeration value="NO_RESULTS" />
+        </s:restriction>
+      </s:simpleType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="GetPhysicalEntitySoapIn">
+    <wsdl:part name="parameters" element="tns:GetPhysicalEntity" />
+  </wsdl:message>
+  <wsdl:message name="GetPhysicalEntitySoapOut">
+    <wsdl:part name="parameters" element="tns:GetPhysicalEntityResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetPhysicalEntityWithParamsSoapIn">
+    <wsdl:part name="parameters" element="tns:GetPhysicalEntityWithParams" />
+  </wsdl:message>
+  <wsdl:message name="GetPhysicalEntityWithParamsSoapOut">
+    <wsdl:part name="parameters" element="tns:GetPhysicalEntityWithParamsResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetDeathsByDateSoapIn">
+    <wsdl:part name="parameters" element="tns:GetDeathsByDate" />
+  </wsdl:message>
+  <wsdl:message name="GetDeathsByDateSoapOut">
+    <wsdl:part name="parameters" element="tns:GetDeathsByDateResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetAliensAppliedByDateSoapIn">
+    <wsdl:part name="parameters" element="tns:GetAliensAppliedByDate" />
+  </wsdl:message>
+  <wsdl:message name="GetAliensAppliedByDateSoapOut">
+    <wsdl:part name="parameters" element="tns:GetAliensAppliedByDateResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetAlienPermitsIssuedByDateSoapIn">
+    <wsdl:part name="parameters" element="tns:GetAlienPermitsIssuedByDate" />
+  </wsdl:message>
+  <wsdl:message name="GetAlienPermitsIssuedByDateSoapOut">
+    <wsdl:part name="parameters" element="tns:GetAlienPermitsIssuedByDateResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetPassportsIssuedByDateSoapIn">
+    <wsdl:part name="parameters" element="tns:GetPassportsIssuedByDate" />
+  </wsdl:message>
+  <wsdl:message name="GetPassportsIssuedByDateSoapOut">
+    <wsdl:part name="parameters" element="tns:GetPassportsIssuedByDateResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetIdentityCardsIssuedByDateSoapIn">
+    <wsdl:part name="parameters" element="tns:GetIdentityCardsIssuedByDate" />
+  </wsdl:message>
+  <wsdl:message name="GetIdentityCardsIssuedByDateSoapOut">
+    <wsdl:part name="parameters" element="tns:GetIdentityCardsIssuedByDateResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetDeathCertificatesIssuedByDateSoapIn">
+    <wsdl:part name="parameters" element="tns:GetDeathCertificatesIssuedByDate" />
+  </wsdl:message>
+  <wsdl:message name="GetDeathCertificatesIssuedByDateSoapOut">
+    <wsdl:part name="parameters" element="tns:GetDeathCertificatesIssuedByDateResponse" />
+  </wsdl:message>
+  <wsdl:portType name="CRMDExchangeServiceSoap">
+    <wsdl:operation name="GetPhysicalEntity">
+      <wsdl:input message="tns:GetPhysicalEntitySoapIn" />
+      <wsdl:output message="tns:GetPhysicalEntitySoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetPhysicalEntityWithParams">
+      <wsdl:input message="tns:GetPhysicalEntityWithParamsSoapIn" />
+      <wsdl:output message="tns:GetPhysicalEntityWithParamsSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDeathsByDate">
+      <wsdl:input message="tns:GetDeathsByDateSoapIn" />
+      <wsdl:output message="tns:GetDeathsByDateSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetAliensAppliedByDate">
+      <wsdl:input message="tns:GetAliensAppliedByDateSoapIn" />
+      <wsdl:output message="tns:GetAliensAppliedByDateSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetAlienPermitsIssuedByDate">
+      <wsdl:input message="tns:GetAlienPermitsIssuedByDateSoapIn" />
+      <wsdl:output message="tns:GetAlienPermitsIssuedByDateSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetPassportsIssuedByDate">
+      <wsdl:input message="tns:GetPassportsIssuedByDateSoapIn" />
+      <wsdl:output message="tns:GetPassportsIssuedByDateSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetIdentityCardsIssuedByDate">
+      <wsdl:input message="tns:GetIdentityCardsIssuedByDateSoapIn" />
+      <wsdl:output message="tns:GetIdentityCardsIssuedByDateSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDeathCertificatesIssuedByDate">
+      <wsdl:input message="tns:GetDeathCertificatesIssuedByDateSoapIn" />
+      <wsdl:output message="tns:GetDeathCertificatesIssuedByDateSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="CRMDExchangeServiceHttpGet" />
+  <wsdl:portType name="CRMDExchangeServiceHttpPost" />
+  <wsdl:binding name="CRMDExchangeServiceSoap" type="tns:CRMDExchangeServiceSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetPhysicalEntity">
+      <soap:operation soapAction="http://moi.gov.cy/GetPhysicalEntity" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPhysicalEntityWithParams">
+      <soap:operation soapAction="http://moi.gov.cy/GetPhysicalEntityWithParams" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDeathsByDate">
+      <soap:operation soapAction="http://moi.gov.cy/GetDeathsByDate" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAliensAppliedByDate">
+      <soap:operation soapAction="http://moi.gov.cy/GetAliensAppliedByDate" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAlienPermitsIssuedByDate">
+      <soap:operation soapAction="http://moi.gov.cy/GetAlienPermitsIssuedByDate" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPassportsIssuedByDate">
+      <soap:operation soapAction="http://moi.gov.cy/GetPassportsIssuedByDate" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetIdentityCardsIssuedByDate">
+      <soap:operation soapAction="http://moi.gov.cy/GetIdentityCardsIssuedByDate" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDeathCertificatesIssuedByDate">
+      <soap:operation soapAction="http://moi.gov.cy/GetDeathCertificatesIssuedByDate" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="CRMDExchangeServiceSoap12" type="tns:CRMDExchangeServiceSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetPhysicalEntity">
+      <soap12:operation soapAction="http://moi.gov.cy/GetPhysicalEntity" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPhysicalEntityWithParams">
+      <soap12:operation soapAction="http://moi.gov.cy/GetPhysicalEntityWithParams" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDeathsByDate">
+      <soap12:operation soapAction="http://moi.gov.cy/GetDeathsByDate" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAliensAppliedByDate">
+      <soap12:operation soapAction="http://moi.gov.cy/GetAliensAppliedByDate" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAlienPermitsIssuedByDate">
+      <soap12:operation soapAction="http://moi.gov.cy/GetAlienPermitsIssuedByDate" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPassportsIssuedByDate">
+      <soap12:operation soapAction="http://moi.gov.cy/GetPassportsIssuedByDate" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetIdentityCardsIssuedByDate">
+      <soap12:operation soapAction="http://moi.gov.cy/GetIdentityCardsIssuedByDate" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDeathCertificatesIssuedByDate">
+      <soap12:operation soapAction="http://moi.gov.cy/GetDeathCertificatesIssuedByDate" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="CRMDExchangeServiceHttpGet" type="tns:CRMDExchangeServiceHttpGet">
+    <http:binding verb="GET" />
+  </wsdl:binding>
+  <wsdl:binding name="CRMDExchangeServiceHttpPost" type="tns:CRMDExchangeServiceHttpPost">
+    <http:binding verb="POST" />
+  </wsdl:binding>
+  <wsdl:service name="CRMDExchangeService">
+    <wsdl:port name="CRMDExchangeServiceSoap" binding="tns:CRMDExchangeServiceSoap">
+      <soap:address location="http://api.crmd.moi.gov.cy/exchange/v1/CRMDExchangeService.asmx" />
+    </wsdl:port>
+    <wsdl:port name="CRMDExchangeServiceSoap12" binding="tns:CRMDExchangeServiceSoap12">
+      <soap12:address location="http://api.crmd.moi.gov.cy/exchange/v1/CRMDExchangeService.asmx" />
+    </wsdl:port>
+    <wsdl:port name="CRMDExchangeServiceHttpGet" binding="tns:CRMDExchangeServiceHttpGet">
+      <http:address location="http://api.crmd.moi.gov.cy/exchange/v1/CRMDExchangeService.asmx" />
+    </wsdl:port>
+    <wsdl:port name="CRMDExchangeServiceHttpPost" binding="tns:CRMDExchangeServiceHttpPost">
+      <http:address location="http://api.crmd.moi.gov.cy/exchange/v1/CRMDExchangeService.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">🔒 Ιχνηλασιμότητα Συστήματος (Audit Logs)</h5>
+        <a href="/" class="btn btn-light btn-sm">Επιστροφή</a>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">Καταγραφή των τελευταίων 100 ενεργειών βάσει προτύπου ISO 27799.</p>
+        
+        <div class="table-responsive">
+            <table class="table table-striped table-hover table-sm">
+                <thead class="table-secondary">
+                    <tr>
+                        <th>Ημερομηνία & Ώρα</th>
+                        <th>Χρήστης</th>
+                        <th>Ενέργεια</th>
+                        <th>Στόχος</th>
+                        <th>Λεπτομέρειες</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                        <td><strong>{{ log.username }}</strong></td>
+                        <td>
+                            {% if log.action == 'CREATE' %} <span class="badge bg-success">CREATE</span>
+                            {% elif log.action == 'UPDATE' %} <span class="badge bg-primary">UPDATE</span>
+                            {% elif log.action == 'DELETE' %} <span class="badge bg-danger">DELETE</span>
+                            {% elif log.action == 'LOGIN' %} <span class="badge bg-info text-dark">LOGIN</span>
+                            {% else %} <span class="badge bg-secondary">{{ log.action }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.target }}</td>
+                        <td class="text-muted">{{ log.details }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

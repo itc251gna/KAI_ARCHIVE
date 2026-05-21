@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Εξέταση ID: {{ exam.id }} | {{ exam.eponymo }} {{ exam.onoma }}</h5>
+                <div>
+                    {% if exam.porisma == 'ΕΚΚΡΕΜΕΙ' %}
+                    <form action="/delete_exam/{{ exam.id }}" method="POST" class="d-inline me-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε οριστικά αυτή την εξέταση;');">
+                            🗑️ Διαγραφή
+                        </button>
+                    </form>
+                    {% endif %}
+                    <a href="/" class="btn btn-light btn-sm">Αρχική</a>
+                </div>
+            </div>
+            <div class="card-body">
+                
+                {% if exam.porisma == 'ΕΚΚΡΕΜΕΙ' %}
+                <div class="alert alert-warning text-center shadow-sm">
+                    <h5>Βήμα 1: Εκτύπωση Εντύπου</h5>
+                    <p class="mb-2">Η εξέταση άνοιξε στο σύστημα. Κατεβάστε το προσυμπληρωμένο αρχείο Word, εκτυπώστε το και παραδώστε το στους ιατρούς.</p>
+                    <a href="/download_draft/{{ exam.id }}" class="btn btn-dark btn-lg mt-2">📥 Κατέβασμα Εντύπου (Word)</a>
+                </div>
+                <hr>
+                {% else %}
+                <div class="alert alert-info d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4 shadow-sm" role="alert">
+                    <div class="d-flex align-items-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill me-2 flex-shrink-0 mt-1" viewBox="0 0 16 16">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                        <div>
+                            <strong>Κλειδωμένα Πεδία:</strong> Η εξέταση έχει ολοκληρωθεί. Το Πόρισμα και η Ημερομηνία Λήξης δεν μπορούν να τροποποιηθούν. Μπορείτε ωστόσο να ανεβάσετε επιπλέον σαρωμένα αρχεία.
+                        </div>
+                    </div>
+                    <a href="{{ url_for('download_certificate', exam_id=exam.id) }}" class="btn btn-success flex-shrink-0">
+                        📜 Εκτύπωση Βεβαίωσης
+                    </a>
+                </div>
+                {% endif %}
+
+                <h5 class="mb-3 text-success">Βήμα 2: Ολοκλήρωση (Μετά την εξέταση)</h5>
+                <form action="/update_exam/{{ exam.id }}" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Τελικό Αποτέλεσμα / Πόρισμα</label>
+                            <select name="porisma" class="form-select {% if exam.porisma != 'ΕΚΚΡΕΜΕΙ' %}text-muted{% endif %}" required 
+                                    {% if exam.porisma != 'ΕΚΚΡΕΜΕΙ' %}disabled style="background-color: #e9ecef; cursor: not-allowed;"{% endif %}>
+                                <option value="" {% if exam.porisma == 'ΕΚΚΡΕΜΕΙ' %}selected{% endif %}>Επιλέξτε...</option>
+                                <option value="ΚΑΤΑΛΛΗΛΟΣ" {% if exam.porisma == 'ΚΑΤΑΛΛΗΛΟΣ' %}selected{% endif %}>Κατάλληλος</option>
+                                <option value="ΑΚΑΤΑΛΛΗΛΟΣ" {% if exam.porisma == 'ΑΚΑΤΑΛΛΗΛΟΣ' %}selected{% endif %}>Ακατάλληλος</option>
+                                <option value="Ι/Π Α' ΚΑΤΗΓΟΡΙΑΣ" {% if exam.porisma == "Ι/Π Α' ΚΑΤΗΓΟΡΙΑΣ" %}selected{% endif %}>Ι/Π Α' Κατηγορίας</option>
+                                <option value="Ι/Π Β' ΚΑΤΗΓΟΡΙΑΣ" {% if exam.porisma == "Ι/Π Β' ΚΑΤΗΓΟΡΙΑΣ" %}selected{% endif %}>Ι/Π Β' Κατηγορίας</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ισχύει μέχρι πότε...</label>
+                            <input type="date" id="valid_until" name="valid_until" class="form-control {% if exam.porisma != 'ΕΚΚΡΕΜΕΙ' %}text-muted{% endif %}" 
+                                   placeholder="π.χ. 15/10/2025" value="{{ exam.valid_until if exam.valid_until else '' }}" required
+                                   {% if exam.porisma != 'ΕΚΚΡΕΜΕΙ' %}readonly style="background-color: #e9ecef; cursor: not-allowed;"{% endif %}>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4 bg-light p-3 rounded border">
+                        <label class="form-label fw-bold">Ανέβασμα Αρχείων (Υπογεγραμμένο Έντυπο, Καρδιογράφημα κλπ)</label>
+                        <p class="text-muted small mb-2">Μπορείτε να επιλέξετε <b>πολλαπλά αρχεία ταυτόχρονα</b> κρατώντας πατημένο το πλήκτρο <code>Ctrl</code> (ή <code>Cmd</code> σε Mac) κατά την επιλογή.</p>
+                        <input type="file" name="scan_files" class="form-control border-primary" multiple accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    
+                    <button type="submit" class="btn {% if exam.porisma != 'ΕΚΚΡΕΜΕΙ' %}btn-secondary{% else %}btn-success{% endif %} w-100 btn-lg">
+                        {% if exam.porisma != 'ΕΚΚΡΕΜΕΙ' %}Προσθήκη Νέων Αρχείων (PDF/Εικόνες){% else %}Αποθήκευση Δεδομένων & Upload PDF{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var validUntilInput = document.getElementById('valid_until');
+        
+        if (validUntilInput) {
+            // Αν το πεδίο είναι readonly (δηλαδή είναι παλιά εξέταση), ΔΕΝ τρέχουμε καθόλου τον έλεγχο, 
+            // γιατί οι παλιές εξετάσεις λογικό είναι να έχουν ημερομηνία στο παρελθόν!
+            if (!validUntilInput.hasAttribute('readonly')) {
+                var todayStr = new Date().toISOString().split('T')[0];
+                validUntilInput.setAttribute('min', todayStr);
+
+                var form = validUntilInput.closest('form');
+                if (form) {
+                    form.addEventListener('submit', function(event) {
+                        var selectedDateStr = validUntilInput.value;
+                        if (selectedDateStr) {
+                            var selectedDate = new Date(selectedDateStr);
+                            var currentDate = new Date();
+                            currentDate.setHours(0,0,0,0);
+                            selectedDate.setHours(0,0,0,0);
+
+                            if (selectedDate < currentDate) {
+                                event.preventDefault();
+                                validUntilInput.classList.add('is-invalid');
+                                alert("Σφάλμα: Η ημερομηνία λήξης (Ισχύει μέχρι) δεν μπορεί να είναι στο παρελθόν. Παρακαλώ διορθώστε την πριν την υποβολή.");
+                            } else {
+                                validUntilInput.classList.remove('is-invalid');
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

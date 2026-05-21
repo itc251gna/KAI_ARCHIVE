@@ -1,0 +1,19 @@
+<user-mapping>
+    <authorize username="admin" password="change-me">
+        <connection name="HIS_System">
+            <protocol>rdp</protocol>
+            <param name="hostname">his-hostname-or-ip</param>
+            <param name="port">3389</param>
+            <param name="ignore-cert">true</param>
+            <param name="username">his-username</param>
+            <param name="password">his-password</param>
+            <param name="security">any</param>
+            <param name="domain">his-domain</param>
+            <param name="enable-printing">true</param>
+            <param name="printer-name">Guacamole</param>
+            <param name="enable-drive">true</param>
+            <param name="drive-path">/tmp/guacamole-share</param>
+            <param name="create-drive-path">true</param>
+        </connection>
+    </authorize>
+</user-mapping>

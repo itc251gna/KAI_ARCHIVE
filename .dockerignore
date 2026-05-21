@@ -1,0 +1,15 @@
+.git
+.gitignore
+venv
+__pycache__
+*.pyc
+.pytest_cache
+
+.env
+ssl
+guacamole_config
+
+postgres_data
+runtime
+backups
+static/scans

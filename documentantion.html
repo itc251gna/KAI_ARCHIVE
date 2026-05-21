@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Τεχνική Τεκμηρίωση: KAI Web Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #2c3e50; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f8f9fa; }
+        h1 { color: #1a252f; border-bottom: 4px solid #3498db; padding-bottom: 10px; font-size: 2.2em; }
+        h2 { color: #2980b9; margin-top: 40px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; }
+        h3 { color: #16a085; margin-top: 25px; border-left: 4px solid #16a085; padding-left: 10px; background-color: #e8f8f5; padding-top: 5px; padding-bottom: 5px; }
+        h4 { color: #8e44ad; margin-top: 15px; }
+        p { margin-bottom: 15px; font-size: 1.05em; }
+        ul { margin-bottom: 20px; }
+        li { margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; }
+        th { background-color: #34495e; color: #fff; font-weight: 600; }
+        tr:hover { background-color: #f1f4f6; }
+        pre { background-color: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: 'Courier New', Courier, monospace; }
+        code { background-color: #e8eaed; color: #c0392b; padding: 2px 5px; border-radius: 3px; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; }
+        .highlight { background-color: #fff3cd; border-left: 5px solid #ffc107; padding: 15px; margin: 20px 0; }
+        .success { background-color: #d4edda; border-left: 5px solid #28a745; padding: 15px; margin: 20px 0; }
+        .danger { background-color: #f8d7da; border-left: 5px solid #dc3545; padding: 15px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>KAI Web Portal - Πλήρες Τεχνικό Εγχειρίδιο (Technical Manual)</h1>
+    <p><strong>Έκδοση Εγγράφου:</strong> 1.0 | <strong>Τελευταία Ενημέρωση:</strong> Μάρτιος 2026</p>
+    <p>Αυτό το έγγραφο προορίζεται για τους Μηχανικούς Λογισμικού (Software Engineers) και τους Διαχειριστές Συστημάτων (System Admins) που θα αναλάβουν τη συντήρηση, αποσφαλμάτωση (debugging) και επέκταση της πλατφόρμας του Κ.Α.Ι.</p>
+
+    <h2>1. Αρχιτεκτονική & Υποδομή (DevOps & Docker)</h2>
+    <p>Η εφαρμογή ακολουθεί αρχιτεκτονική Microservices μέσω του <code>docker-compose.yml</code>. Κάθε υπηρεσία τρέχει σε απόλυτα απομονωμένο περιβάλλον:</p>
+    
+    <h3>1.1 Αρχεία Υποδομής</h3>
+    <table>
+        <tr>
+            <th>Αρχείο</th>
+            <th>Ρόλος & Λειτουργία</th>
+        </tr>
+        <tr>
+            <td><code>docker-compose.yml</code></td>
+            <td>Ο "ενορχηστρωτής". Σηκώνει τα containers (Nginx, Flask, Postgres, Guacamole/Tomcat, Guacd). Ορίζει τα εσωτερικά δίκτυα (bridge networks) ώστε η βάση δεδομένων να μην είναι εκτεθειμένη στο εξωτερικό δίκτυο.</td>
+        </tr>
+        <tr>
+            <td><code>Dockerfile</code></td>
+            <td>Ορίζει το πώς χτίζεται το image της Flask εφαρμογής (Python). Κάνει copy τον κώδικα, εγκαθιστά τα πακέτα του <code>requirements.txt</code> (π.χ. Flask, psycopg2, zeep) και εκθέτει την πόρτα 5000.</td>
+        </tr>
+        <tr>
+            <td><code>requirements.txt</code></td>
+            <td>Η λίστα με τις Python βιβλιοθήκες. Κρίσιμες βιβλιοθήκες: <code>Flask</code> (Web Framework), <code>zeep</code> (για το SOAP/WSDL API του Μητρώου), <code>psycopg2-binary</code> (Οδηγός PostgreSQL), <code>python-docx</code> (παραγωγή αρχείων Word).</td>
+        </tr>
+    </table>
+
+    <h2>2. Διαχείριση Δικτύου, Ασφάλειας & Proxy (Nginx)</h2>
+    
+    <h3>2.1 Το αρχείο <code>nginx.conf</code></h3>
+    <p>Ο Nginx λειτουργεί ως Edge Router. Δέχεται μόνο HTTPS (443) και προστατεύει το backend. Κρίσιμες ρυθμίσεις που έχουν εφαρμοστεί:</p>
+    <ul>
+        <li><strong>Location / :</strong> Ανακατευθύνει τα requests στην Flask (<code>proxy_pass http://kai-app:5000;</code>). Προσθέτει τα headers <code>X-Real-IP</code> και <code>X-Forwarded-For</code> για να περάσει την IP του χρήστη στην Python για το Audit Log.</li>
+        <li><strong>Location /guacamole/ :</strong> Η σύνδεση του RDP. Έχει ρυθμιστεί ρητά το <code>proxy_buffering off;</code> για να μην καθυστερεί η μετάδοση εικόνας. Τα timeouts (<code>proxy_read_timeout 3600s;</code>) αυξήθηκαν για να αποφευχθεί το κλείσιμο της σύνδεσης από τα ενδιάμεσα Firewalls (VLAN drops στα 10 δευτερόλεπτα). <strong>SOS:</strong> Χρησιμοποιείται το <code>proxy_set_header Host $proxy_host;</code> για να αποφευχθεί το Error 400 (The character [_] is never valid) του Tomcat 9.</li>
+    </ul>
+
+    <h3>2.2 Πιστοποιητικά SSL (Φάκελος ssl/)</h3>
+    <p>Λόγω Intranet λειτουργίας, δημιουργήθηκε Self-Signed SSL μέσω του <code>req.cnf</code>. Η ρύθμιση <code>keyUsage = digitalSignature, keyEncipherment</code> προστέθηκε για να περνάει τους ελέγχους του Opera/Chrome (ERR_SSL_KEY_USAGE_INCOMPATIBLE). Το <code>cert.pem</code> πρέπει να εισαχθεί στα Trusted Root Authorities των Windows των χρηστών.</p>
+
+    <h2>3. Λογική Backend (Python / Flask)</h2>
+    <p>Ο πυρήνας της εφαρμογής είναι το <code>app.py</code>. Χωρίζεται λογικά στις παρακάτω ενότητες:</p>
+
+    <h3>3.1 Authentication & Διαχείριση Χρηστών (RBAC)</h3>
+    <p>Η εφαρμογή υποστηρίζει ρόλους (User, Admin) και καταστάσεις (Pending, Approved).</p>
+    <ul>
+        <li><code>/register</code>: Καταχωρεί το νέο χρήστη στην PostgreSQL με κρυπτογραφημένο (hashed) κωδικό. Προεπιλογή: Status = 'Pending'.</li>
+        <li><code>/login</code>: Ελέγχει τα credentials. Αν ο χρήστης είναι 'Pending', του απαγορεύει την είσοδο. Αν είναι 'Approved', δημιουργεί session (cookies).</li>
+        <li><code>/change_password</code>: Επιτρέπει στον χρήστη την ασφαλή αλλαγή του κωδικού του.</li>
+    </ul>
+
+    <h3>3.2 Διοικητικό Πάνελ (Admin Routes)</h3>
+    <p>Προσβάσιμα αυστηρά και μόνο αν το session του χρήστη έχει role = 'admin'.</p>
+    <ul>
+        <li><code>/pending</code>: Διαβάζει τη βάση και εμφανίζει αιτήματα εγγραφών.</li>
+        <li><code>/manage_users</code>: CRUD λειτουργίες (Επεξεργασία ρόλων, απενεργοποίηση χρηστών).</li>
+        <li><code>/audit</code>: Προβολή του ιστορικού ενεργειών συστήματος (ποιος μπήκε πότε, τι εκτύπωσε).</li>
+    </ul>
+
+    <h3>3.3 Ενσωμάτωση Μητρώου Πολιτών (SOAP API)</h3>
+    <p>Η εφαρμογή δεν βασίζεται σε απλές φόρμες, αλλά "μιλάει" με εθνικά μητρώα.</p>
+    <ul>
+        <li><code>CivilRegistryAPI_live.wsdl</code>: Το επίσημο αρχείο περιγραφής των Web Services του Μητρώου.</li>
+        <li><code>test_wsdl.py</code> & <code>app.py</code>: Μέσω της βιβλιοθήκης <strong>Zeep</strong>, η εφαρμογή κατασκευάζει XML αιτήματα (SOAP envelopes), τα στέλνει στο Μητρώο Πολιτών, λαμβάνει το XML response, το κάνει parse και γεμίζει αυτόματα τις φόρμες (Όνομα, Επώνυμο, Πατρώνυμο κλπ).</li>
+    </ul>
+
+    <h3>3.4 Αυτοματισμός Εγγράφων (Document Generation)</h3>
+    <p>Το σύστημα λειτουργεί ως μηχανή παραγωγής γνωματεύσεων (Mail Merge logic):</p>
+    <ul>
+        <li>Στη διαδρομή της δημιουργίας εγγράφου, η Flask διαβάζει τα πρότυπα <code>loipoi.docx</code>, <code>certificate.docx</code>, <code>iptamenoi.docx</code>.</li>
+        <li>Εντοπίζει συγκεκριμένα "tags" ή bookmarks μέσα στο Word και τα αντικαθιστά με τα δεδομένα που αντλήθηκαν από το API και το <code>exam_form.html</code>.</li>
+        <li>Επιστρέφει το δυναμικά παραγόμενο αρχείο στον χρήστη για κατέβασμα/εκτύπωση.</li>
+    </ul>
+
+    <h2>4. Διεπαφή Χρήστη (HTML/CSS/JS Templates)</h2>
+    <p>Ο φάκελος <code>templates/</code> περιέχει τον κώδικα εμφάνισης. Η μηχανή Jinja2 αναλαμβάνει το rendering:</p>
+    <table>
+        <tr>
+            <th>Αρχείο HTML</th>
+            <th>Λειτουργία</th>
+        </tr>
+        <tr>
+            <td><code>base.html</code></td>
+            <td>Ο "σκελετός" της εφαρμογής. Περιέχει το γενικό Layout, το Navbar (μενού) και φορτώνει τα CSS/JS. Όλα τα υπόλοιπα αρχεία κάνουν <code>{% extends "base.html" %}</code>.</td>
+        </tr>
+        <tr>
+            <td><code>index.html</code></td>
+            <td>Το αρχικό Dashboard μετά την επιτυχή είσοδο. Εμφανίζει στατιστικά και γρήγορες συντομεύσεις.</td>
+        </tr>
+        <tr>
+            <td><code>exam_form.html</code></td>
+            <td>Η ιατρική φόρμα εισαγωγής στοιχείων, η οποία δέχεται αυτοματοποιημένα δεδομένα από το WSDL.</td>
+        </tr>
+        <tr>
+            <td><code>his_system.html</code></td>
+            <td>Το container page που ενσωματώνει (μέσω iFrame ή απευθείας link) το περιβάλλον του Guacamole.</td>
+        </tr>
+        <tr>
+            <td><code>appointments.html</code> & <code>history.html</code></td>
+            <td>Προβολή ραντεβού από την PostgreSQL και ψηφιοποιημένου ιστορικού (όπως το <code>iatriko_istoriko.pdf</code>).</td>
+        </tr>
+        <tr>
+            <td><code>pending.html</code></td>
+            <td>Το UI του Admin για την αποδοχή/απόρριψη αιτημάτων εγγραφής χρηστών.</td>
+        </tr>
+        <tr>
+            <td><code>429.html</code></td>
+            <td>Σελίδα σφάλματος "Too Many Requests". Ενεργοποιείται από τον μηχανισμό Rate Limiting του Nginx/Flask για αποτροπή DDoS ή Brute-Force επιθέσεων.</td>
+        </tr>
+    </table>
+
+    <h3>4.1 Τοπικοί Πόροι (Static Assets)</h3>
+    <p>Για πλήρη αυτονομία σε κλειστά δίκτυα, δεν υπάρχουν εξωτερικά CDNs. Τα <code>bootstrap.min.css</code>, <code>bootstrap.bundle.min.js</code> και το <code>custom.css</code> σερβίρονται τοπικά. Οι γραμματοσειρές της εφαρμογής βρίσκονται στα αρχεία <code>inter-v20-greek_latin-*.woff2</code>.</p>
+
+    <h2>5. Guacamole Clientless RDP (his_system)</h2>
+    <p>Η γέφυρα με το HIS γίνεται μέσω του Apache Guacamole.</p>
+    <ul>
+        <li><code>user-mapping.xml</code>: Εδώ ορίζονται στατικά οι διαθέσιμες συνδέσεις, οι εσωτερικές IP (π.χ. του Windows Server που τρέχει το HIS) και τα πρωτόκολλα (RDP).</li>
+        <li>Ο Nginx δρομολογεί τα WebSockets (<code>Connection "upgrade"</code>) στο Guacamole, το οποίο μετατρέπει το RDP stream σε HTML5 Canvas στοιχείο, εμφανίζοντάς το εντός του <code>his_system.html</code>.</li>
+    </ul>
+
+    <div class="danger">
+        <strong>Συντήρηση Βάσης Δεδομένων:</strong> Επειδή το Audit log (στο <code>audit.html</code>) καταγράφει συνεχώς ενέργειες, συστήνεται η ρύθμιση ενός cron job (ή celery task) στο επίπεδο του OS, για τον καθαρισμό εγγραφών παλαιότερων των 2 ετών, προκειμένου να μην υπερφορτωθεί το volume της PostgreSQL.
+    </div>
+
+</body>
+</html>

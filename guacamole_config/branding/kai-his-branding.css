@@ -1,0 +1,61 @@
+.login-ui {
+    background: #f4f7fb !important;
+}
+
+.login-ui .login-dialog {
+    border-radius: 8px !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.16) !important;
+    padding: 2rem 2.25rem !important;
+}
+
+.login-ui .login-dialog .logo {
+    width: 12rem !important;
+    height: 4rem !important;
+    margin: 0 auto 1rem !important;
+    background: url("/guac-branding/kai-his-logo.svg") center / contain no-repeat !important;
+}
+
+.login-ui .login-dialog .version {
+    display: none !important;
+}
+
+.login-ui .login-dialog .login-fields input {
+    border-radius: 6px !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+}
+
+.login-ui .login-dialog .login-fields input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+}
+
+.login-ui input[type="submit"],
+.login-ui button[type="submit"] {
+    border-radius: 6px !important;
+    border: 1px solid #1d4ed8 !important;
+    background: #1d4ed8 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.login-ui input[type="submit"]:hover,
+.login-ui button[type="submit"]:hover {
+    background: #1e40af !important;
+    border-color: #1e40af !important;
+}
+
+.kai-login-note {
+    width: min(28rem, calc(100% - 2rem));
+    margin: 1rem auto 0;
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.header {
+    background: #0f172a !important;
+    border-bottom-color: #1e293b !important;
+}

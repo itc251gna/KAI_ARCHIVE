@@ -1,0 +1,49 @@
+# K.A.I. SYSTEM - SECURE .GITIGNORE
+
+# Runtime secrets
+.env
+.env.*
+*.env
+!.env.example
+secret_key.txt
+HL7_API_KEY.txt
+
+# Certificates and private keys
+/ssl/
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+
+# Guacamole credentials/config with passwords
+/guacamole_config/user-mapping.xml
+
+# Database, runtime data, scans, and backups
+/postgres_data/
+/runtime/
+/backups/
+/static/scans/
+/devs_backup/
+/templates/devs_backup/
+/static/templates/devs_backup/
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated local reference/output files
+/project_structure.txt
+/transfers.txt
+
+# Python, caches, and local tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+venv/
+.venv/
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log

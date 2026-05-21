@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-primary mb-1">Διαχείριση Λιστών Εξέτασης</h3>
+        <p class="text-muted mb-0">Οι ενεργές επιλογές εμφανίζονται στη φόρμα δημιουργίας εξέτασης.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <form action="{{ url_for('reseed_exam_options') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-outline-success">Επαναφορά defaults</button>
+        </form>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-dark">Επιστροφή</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for option_type, title in option_type_labels.items() %}
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ title }}</h5>
+                <span class="badge bg-primary">{{ option_groups[option_type]|length }}</span>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('add_exam_option') }}" method="POST" class="row g-2 align-items-end mb-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="option_type" value="{{ option_type }}">
+                    <div class="col">
+                        <label class="form-label fw-bold">Νέα επιλογή</label>
+                        <input type="text" name="label" class="form-control" required maxlength="120">
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label fw-bold">Σειρά</label>
+                        <input type="number" name="sort_order" class="form-control" min="0" step="1">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Προσθήκη</button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Επιλογή</th>
+                                <th style="width: 90px;">Σειρά</th>
+                                <th style="width: 100px;">Ενεργή</th>
+                                <th class="text-end" style="width: 170px;">Ενέργειες</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for option in option_groups[option_type] %}
+                            <tr>
+                                <td>
+                                    <input form="update-option-{{ option.id }}" type="text" name="label" class="form-control" value="{{ option.label }}" required maxlength="120">
+                                </td>
+                                <td>
+                                    <input form="update-option-{{ option.id }}" type="number" name="sort_order" class="form-control" value="{{ option.sort_order }}" min="0" step="1">
+                                </td>
+                                <td>
+                                    <div class="form-check form-switch">
+                                        <input form="update-option-{{ option.id }}" class="form-check-input" type="checkbox" name="is_active" {% if option.is_active %}checked{% endif %}>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <form id="update-option-{{ option.id }}" action="{{ url_for('update_exam_option', option_id=option.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    </form>
+                                    <button form="update-option-{{ option.id }}" type="submit" class="btn btn-outline-primary btn-sm">Αποθήκευση</button>
+                                    <form action="{{ url_for('delete_exam_option', option_id=option.id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Να διαγραφεί αυτή η επιλογή;');">Διαγραφή</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">Δεν υπάρχουν επιλογές σε αυτή τη λίστα.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card shadow-sm mx-auto" style="max-width: 800px;">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Επιβεβαίωση Στοιχειών & Έναρξη Εξέτασης</h5>
+        <a href="/" class="btn btn-light btn-sm">Ακύρωση</a>
+    </div>
+    <div class="card-body">
+        <form action="/create_exam" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <h6 class="text-primary border-bottom pb-2">Δημογραφικά (Από Εθνικό Μητρώο Άτλας)</h6>
+            <div class="row mb-4 bg-light p-3 rounded border">
+                <div class="col-md-6 mb-2">
+                    <label class="form-label text-muted small mb-0">ΑΜΚΑ</label>
+                    <input type="text" class="form-control bg-white" name="amka" value="{{ person['ΑΜΚΑ'] }}" readonly>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label text-muted small mb-0">Ημ. Γέννησης</label>
+                    <input type="text" class="form-control bg-white" name="hm_gen" value="{{ person['ΗΜΕΡΟΜΗΝΙΑ_ΓΕΝΝΗΣΗΣ'] }}" readonly>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label text-muted small mb-0">Επώνυμο</label>
+                    <input type="text" class="form-control bg-white" name="eponymo" value="{{ person['ΕΠΩΝΥΜΟ'] }}" readonly>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label text-muted small mb-0">Όνομα</label>
+                    <input type="text" class="form-control bg-white" name="onoma" value="{{ person['ΟΝΟΜΑ'] }}" readonly>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label text-muted small mb-0">Πατρώνυμο</label>
+                    <input type="text" class="form-control bg-white" name="patronymo" value="{{ person['ΠΑΤΡΩΝΥΜΟ'] }}" readonly>
+                </div>
+                <div class="col-12 mt-2 text-end">
+                    <a href="/history/{{ person['ΑΜΚΑ'] }}" class="btn btn-secondary btn-sm">Δείτε το Ιστορικό Εξετάσεων</a>
+                </div>
+            </div>
+
+            <h6 class="text-success border-bottom pb-2">Στρατιωτικά Στοιχεία (Προσυμπληρωμένα από το ιστορικό μας)</h6>
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">ΑΣΜΑ *</label>
+                    <input type="text" class="form-control" name="asma" value="{{ local_data['asma'] if local_data else '' }}" required placeholder="π.χ. 12345">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Βαθμός / Ειδικότητα *</label>
+                    <input type="text" class="form-control" name="vathmos" value="{{ local_data['vathmos'] if local_data else '' }}" required placeholder="π.χ. ΣΜΧΟΣ (Ι)">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Μονάδα *</label>
+                    <input type="text" class="form-control" name="monada" value="{{ local_data['monada'] if local_data else '' }}" required placeholder="π.χ. 114 ΠΜ">
+                </div>
+            </div>
+
+	   <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Ημερομηνία Εξέτασης *</label>
+                    <input type="date" class="form-control border-primary" name="exam_date" id="exam_date" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Κατηγορία / Ειδικότητα *</label>
+                    <select name="katigoria" class="form-select border-primary" required>
+                        <option value="" selected disabled>Επιλέξτε...</option>
+                        {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <label class="form-label fw-bold">Είδος / Σκοπός *</label>
+                    <select name="skopos" class="form-select border-primary" required>
+                        <option value="" selected disabled>Επιλέξτε Σκοπό...</option>
+                        {% for purpose in purposes %}
+                            <option value="{{ purpose }}">{{ purpose }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <script>
+                document.getElementById('exam_date').valueAsDate = new Date();
+            </script>
+
+            <div class="row">
+                <div class="col-12 d-grid">
+                    <button type="submit" class="btn btn-success btn-lg shadow-sm">Δημιουργία Εξέτασης & Εκτύπωση</button>
+                </div>
+            </div>
+            
+        </form>
+    </div>
+</div>
+{% endblock %}
