@@ -51,3 +51,4 @@ logs/
 # Local deployment state
 /.deploy/
 *.backup-*
+*.pre-*-*

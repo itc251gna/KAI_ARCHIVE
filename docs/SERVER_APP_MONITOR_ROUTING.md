@@ -11,7 +11,7 @@ No secrets, tokens, sudo passwords, cookies, or patient/person data are stored h
 
 - `https://10.4.51.232/` should open Server App Monitor.
 - KAI should remain available through a hostname, not through the default IP vhost.
-- One production nginx edge should own public `80/443` and route both Server App Monitor and KAI.
+- One production nginx edge should own public `80/443` and route Server App Monitor, KAI, Guacamole, and shared app hostnames such as Chatty.
 - HTTP on port `80` should redirect to HTTPS.
 
 ## Local Replica Files
@@ -34,9 +34,11 @@ The local `nginx.conf` now has:
 - default HTTPS server for `server_name _`, proxying `/` to `http://10.4.51.232:4180`
 - named HTTPS server for `kai-app` and `kai-app.251gh.local`, proxying `/` to `http://kai-app:5000`
 - existing `/guacamole/` proxy kept under the named KAI server
+- named HTTPS server for `chatty`, `chatty.251gh.local`, `chatbot`, and `chatbot.251gh.local`, proxying `/` to `http://chatty:3000`
 - default HTTP server on port `80`, redirecting to HTTPS
 
 The production edge is intentionally still the Docker nginx container from the KAI stack, not system nginx. This keeps the current public entrypoint in one place while preserving Docker-local routing to KAI and Guacamole.
+Chatty must remain attached to the `kai_app_default` Docker network for the `chatty` upstream name to resolve from `kai-nginx`.
 
 ## Production Files
 
@@ -80,6 +82,7 @@ https://10.4.51.232/                         -> Server App Monitor
 https://10.4.51.232/api/config              -> Server App Monitor API through nginx
 http://10.4.51.232/                         -> 301 redirect to HTTPS
 https://kai-app/ resolved to 10.4.51.232    -> KAI login redirect
+https://chatty/ resolved to 10.4.51.232     -> Chatty through unified nginx
 ```
 
 The KAI app is no longer the default response for direct IP access. It is now selected by the HTTP `Host` header.
@@ -90,7 +93,7 @@ Nginx chooses a server block by `server_name`.
 
 Direct IP access usually sends `Host: 10.4.51.232`, so it lands in the default server block. That default block now proxies to Server App Monitor on port `4180`.
 
-KAI still works when the request uses a KAI hostname such as `kai-app` or `kai-app.251gh.local`, because those names match the second HTTPS server block.
+KAI still works when the request uses a KAI hostname such as `kai-app` or `kai-app.251gh.local`, because those names match the KAI HTTPS server block. Chatty works the same way for `chatty`, `chatty.251gh.local`, `chatbot`, and `chatbot.251gh.local`.
 
 ## Rollback
 
@@ -117,6 +120,7 @@ curl -k -I http://10.4.51.232
 curl -k -I https://10.4.51.232
 curl -k -sS https://10.4.51.232/api/config
 curl -k -I --resolve kai-app:443:10.4.51.232 https://kai-app
+curl -k -I --resolve chatty:443:10.4.51.232 https://chatty
 ```
 
 From the server:
@@ -130,4 +134,5 @@ Expected high-level result:
 
 - direct IP opens Server App Monitor
 - named `kai-app` host opens KAI
+- named `chatty` host opens Chatty
 - nginx config test passes
