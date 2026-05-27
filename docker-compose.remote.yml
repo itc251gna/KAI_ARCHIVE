@@ -50,18 +50,3 @@ services:
       - kai-db
       - kai-redis
     restart: always
-
-  nginx:
-    image: nginx:alpine
-    container_name: kai-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-      - ./guacamole_config/branding:/etc/nginx/guac-branding:ro
-    depends_on:
-      - kai-app
-      - kai-guacamole
-    restart: always
