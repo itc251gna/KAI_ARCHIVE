@@ -159,21 +159,31 @@ cd /opt/kai-app
 
 ## Deploy Production
 
-Deploy one tested tag:
+Deploy one tested tag or explicit commit that is already on `origin/main`:
 
 ```bash
-cd /opt/kai-app
+cd /home/kmh251/deployment/kai_app
 ./scripts/deploy_production.sh kai-v2026-05-21-feature
+```
+
+or:
+
+```bash
+./scripts/deploy_production.sh <commit-sha-from-origin-main>
 ```
 
 The script:
 
-- refuses to deploy over manual tracked-file edits
-- fetches Git tags
-- checks out the requested tag
+- refuses to deploy unless the production checkout is clean, including untracked non-ignored files
+- refuses ambiguous targets such as `main`, `origin/main`, or `HEAD`
+- fetches `origin/main` and tags
+- resolves the requested tag/commit to an immutable commit SHA
+- verifies that the target commit is contained in `origin/main`
+- checks out the resolved commit detached, not a mutable branch name
 - verifies required production-only files
 - validates Docker Compose
 - rebuilds and starts the production stack
+- records the deployed target and revision under `.deploy/`
 
 ## Rollback
 
@@ -192,4 +202,6 @@ Rollback to a specific tag:
 
 ## Production Rule
 
-Do not edit tracked files manually on production. Make changes locally, test them locally, commit/tag/push them, then deploy that tag.
+Do not edit application files manually on production. Make changes locally, test them locally, commit to `main`, push to GitHub, then deploy an explicit tag or commit SHA that exists on `origin/main`.
+
+Production deploy must never be made from random workspace changes, local-only commits, mutable branch names, or an unclean checkout. If the production folder is dirty, fix that first by committing the change in local development and redeploying, or by deliberately stashing/removing local diagnostic files.

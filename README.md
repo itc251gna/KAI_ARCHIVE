@@ -49,6 +49,8 @@ Production deploys only tested tags:
 ./scripts/deploy_production.sh kai-vYYYY-MM-DD-name
 ```
 
+The production deploy script enforces a clean production checkout and only accepts explicit tags or commit SHAs that are contained in `origin/main`. It refuses mutable targets such as `main`, `origin/main`, or `HEAD`.
+
 For the first replacement of an existing legacy production folder, use:
 
 ```bash
