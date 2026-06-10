@@ -135,7 +135,7 @@ Verified on 2026-05-20:
 
 ## Known Technical Risks To Keep In Mind
 
-- `db.create_all()` runs on import. If PostgreSQL is still starting, Gunicorn workers can fail temporarily.
+- `db.create_all()` runs on import. It has a retry/rollback guard for transient multi-worker schema races, but real schema migrations still need care.
 - APScheduler starts in `app.py`; with multiple Gunicorn workers, multiple scheduler instances are possible.
 - There are no migrations in the current project.
 - FHIR `fullUrl` values are hardcoded to `http://localhost` in the current app code.

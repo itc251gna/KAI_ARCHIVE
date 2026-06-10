@@ -6,6 +6,7 @@ import json
 import hashlib
 import subprocess
 import tempfile
+import time
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session, jsonify
 from flask_session import Session
@@ -485,8 +486,19 @@ def log_action(action, target, details):
     db.session.add(new_log)
     db.session.commit()
 
+def create_all_with_retry(retries=3, delay_seconds=0.5):
+    for attempt in range(retries):
+        try:
+            db.create_all()
+            return
+        except IntegrityError:
+            db.session.rollback()
+            if attempt == retries - 1:
+                raise
+            time.sleep(delay_seconds)
+
 with app.app_context():
-    db.create_all()
+    create_all_with_retry()
     _seed_exam_options()
     admin_user = os.getenv("ADMIN_USERNAME", "admin")
     if not User.query.filter_by(username=admin_user).first():
