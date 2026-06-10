@@ -158,7 +158,7 @@
             <div class="d-flex align-items-center">
                 <span class="navbar-text me-3 text-light fw-medium">
                     Χρήστης: <strong>{{ current_user.username }}</strong>
-                    {% if current_user.username == 'admin' %}
+                    {% if is_admin_user() %}
                         <span class="badge bg-danger ms-2">Διαχειριστής</span>
                     {% endif %}
                 </span>

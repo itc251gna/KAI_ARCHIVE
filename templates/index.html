@@ -13,7 +13,7 @@
                             🩺 Καθημερινές Εργασίες
                         </button>
                     </li>
-                    {% if current_user.username == 'admin' %}
+                    {% if is_admin_user() %}
                     <li class="nav-item" role="presentation">
                         <button class="nav-link fw-bold text-secondary px-4" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab" aria-selected="false">
                             ⚙️ Σύστημα & Διαχείριση
@@ -84,14 +84,14 @@
 
                     </div>
 
-                    {% if current_user.username == 'admin' %}
+                    {% if is_admin_user() %}
                     <div class="tab-pane fade" id="admin" role="tabpanel" tabindex="0">
                         <div class="text-center py-4">
                             <h5 class="text-secondary mb-4">Εργαλεία Διαχειριστή Συστήματος</h5>
                             
                             <div class="d-grid gap-3 col-md-8 mx-auto">
                                 <a href="/manage_users" class="btn btn-primary btn-lg shadow-sm">
-                                    👥 Διαχείριση Χρηστών Συστήματος
+                                    👥 Κεντρική Διαχείριση Χρηστών & Δικαιωμάτων
                                 </a>
                                 <a href="/manage_exam_options" class="btn btn-outline-primary btn-lg shadow-sm">
                                     Διαχείριση Σκοπών & Κατηγοριών Εξέτασης
@@ -99,8 +99,8 @@
                                 <a href="/audit_logs" class="btn btn-dark btn-lg shadow-sm">
                                     🔒 Προβολή Ιστορικού Ενεργειών (Audit Logs)
                                 </a>
-                                <a href="/force_backup" class="btn btn-outline-success mt-2">
-                                    💾 Λήψη Χειροκίνητου Backup
+                                <a href="/manage_backups" class="btn btn-outline-success mt-2">
+                                    💾 Διαχείριση Backup
                                 </a>
                             </div>
                         </div>

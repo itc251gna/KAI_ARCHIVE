@@ -130,7 +130,8 @@ Verified on 2026-05-20:
 - Do not run state-changing production tests without an agreed test record.
 - Do not commit `.env`, SSL private keys, Guacamole credentials, database volumes, backups, or uploaded scans.
 - Some GET routes create audit entries, including manual/appointments/download routes.
-- `/force_backup` is a GET route but changes state by creating an encrypted backup.
+- Backup operations are managed from `/manage_backups`; create and verify actions use POST/CSRF and write `backup_record` rows with status, size, SHA-256, and verification details.
+- `/force_backup` is retained only as a legacy compatibility route that redirects admins back to `/manage_backups`.
 
 ## Known Technical Risks To Keep In Mind
 

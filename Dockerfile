@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Εγκατάσταση απαραίτητων εργαλείων για την PostgreSQL
-RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libpq-dev gcc postgresql-client && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

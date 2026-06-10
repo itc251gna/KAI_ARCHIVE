@@ -43,6 +43,15 @@ For a fuller local check that starts the stack and tests HTTPS endpoints:
 .\scripts\verify_local.ps1 -StartStack -SmokeTest
 ```
 
+When a change touches backup, database, templates, runtime files, Dockerfile, or admin flows, also test `/manage_backups` locally:
+
+```text
+1. Log in as admin.
+2. Create a manual backup.
+3. Verify it.
+4. Confirm the row reaches VERIFIED and the download link returns the encrypted zip.
+```
+
 ## Create A Release
 
 If changes are already committed:

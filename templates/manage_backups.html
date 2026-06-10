@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Διαχείριση Backup</h5>
+        <a href="/" class="btn btn-light btn-sm">Επιστροφή</a>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+            <div>
+                <h6 class="fw-bold mb-1">Κρυπτογραφημένα αντίγραφα KAI</h6>
+                <p class="text-muted small mb-0">
+                    Περιλαμβάνουν βάση δεδομένων, ανεβασμένα scans, ενεργά DOC/PDF templates και manifest ελέγχου.
+                    Κρατούνται τα τελευταία {{ retention_count }} επιτυχημένα backup.
+                </p>
+                <p class="text-muted small mb-0">
+                    Database backup: {% if include_database %}ενεργό{% else %}ανενεργό{% endif %}
+                </p>
+            </div>
+            <form action="{{ url_for('create_backup_route') }}" method="POST" class="align-self-lg-start">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn-success fw-bold">
+                    Δημιουργία Backup
+                </button>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Ημερομηνία</th>
+                        <th>Τύπος</th>
+                        <th>Status</th>
+                        <th>Χρήστης</th>
+                        <th>Μέγεθος</th>
+                        <th>SHA-256</th>
+                        <th>Έλεγχος</th>
+                        <th class="text-end">Ενέργειες</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for backup in backups %}
+                    <tr>
+                        <td class="text-nowrap">{{ backup.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                        <td>{{ backup.backup_type }}</td>
+                        <td>
+                            {% if backup.status == 'VERIFIED' %}
+                                <span class="badge bg-success">VERIFIED</span>
+                            {% elif backup.status == 'CREATED' %}
+                                <span class="badge bg-primary">CREATED</span>
+                            {% elif backup.status == 'FAILED' or backup.status == 'VERIFY_FAILED' %}
+                                <span class="badge bg-danger">{{ backup.status }}</span>
+                            {% elif backup.status == 'PRUNED' %}
+                                <span class="badge bg-secondary">PRUNED</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">{{ backup.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ backup.created_by or 'System' }}</div>
+                            <div class="text-muted small">{{ backup.auth_method or 'unknown' }}</div>
+                        </td>
+                        <td class="text-nowrap">{{ backup.size_bytes|filesize }}</td>
+                        <td>
+                            {% if backup.sha256 %}
+                                <code>{{ backup.sha256[:12] }}...</code>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if backup.verified_at %}
+                                <div class="small">{{ backup.verified_at.strftime('%d/%m/%Y %H:%M:%S') }}</div>
+                            {% endif %}
+                            <div class="text-muted small">{{ backup.verify_message or '-' }}</div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex gap-2 justify-content-end">
+                                <form action="{{ url_for('verify_backup_route', backup_id=backup.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                                        Verify
+                                    </button>
+                                </form>
+                                {% if backup.status != 'PRUNED' %}
+                                <a href="{{ url_for('download_backup_route', backup_id=backup.id) }}" class="btn btn-outline-success btn-sm">
+                                    Download
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            Δεν υπάρχει ακόμα καταγεγραμμένο backup.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,11 @@
 import os
 import io
 import shutil
+import ipaddress
+import json
+import hashlib
+import subprocess
+import tempfile
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session, jsonify
 from flask_session import Session
@@ -55,6 +60,29 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_
 
 # Εξαναγκάζουμε την Flask να δημιουργεί ΠΑΝΤΑ HTTPS links στα redirects
 app.config['PREFERRED_URL_SCHEME'] = 'https'
+
+def bool_env(name, default="0"):
+    return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
+
+def csv_env(name, default=""):
+    return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
+
+TRUST_SSO_HEADERS = bool_env("TRUST_SSO_HEADERS", "0")
+SSO_TRUSTED_PROXY_CIDRS = csv_env("SSO_TRUSTED_PROXY_CIDRS", "127.0.0.1/32,172.16.0.0/12")
+SSO_KAI_USER_GROUP = os.getenv("SSO_KAI_USER_GROUP", "/apps/kai/users")
+SSO_KAI_ADMIN_GROUP = os.getenv("SSO_KAI_ADMIN_GROUP", "/apps/kai/admins")
+SSO_GLOBAL_ADMIN_GROUP = os.getenv("SSO_GLOBAL_ADMIN_GROUP", "/apps/global/admins")
+CENTRAL_AUTH_REALM = os.getenv("CENTRAL_AUTH_REALM", "intranet")
+CENTRAL_AUTH_ADMIN_URL = os.getenv("CENTRAL_AUTH_ADMIN_URL", "https://auth.251gh.local/admin/")
+CENTRAL_AUTH_USERS_URL = os.getenv(
+    "CENTRAL_AUTH_USERS_URL",
+    f"https://auth.251gh.local/admin/master/console/#/{CENTRAL_AUTH_REALM}/users",
+)
+CENTRAL_AUTH_GROUPS_URL = os.getenv(
+    "CENTRAL_AUTH_GROUPS_URL",
+    f"https://auth.251gh.local/admin/master/console/#/{CENTRAL_AUTH_REALM}/groups",
+)
+ALLOW_LOCAL_USER_ADMIN_FROM_SSO = bool_env("ALLOW_LOCAL_USER_ADMIN_FROM_SSO", "0")
 
 # Middleware Ασφαλείας: Ακόμα κι αν ο Proxy κάνει λάθος, εμείς επιβάλλουμε το HTTPS εσωτερικά
 class ForceHTTPSMiddleware:
@@ -113,6 +141,9 @@ def manage_session():
                 
         except ValueError:
             pass
+
+    if request.endpoint not in {"static", "logout"}:
+        sync_sso_session()
             
     # Ανανέωση χρόνου και αποστολή cookie (μόνο αν πέρασε το 5δευτερόλεπτο)
     session['last_active'] = datetime.now().isoformat()
@@ -141,6 +172,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'scans')
 app.config['TEMPLATE_FOLDER'] = os.path.join(BASE_DIR, 'static', 'templates')
 BACKUP_FOLDER = os.path.join(BASE_DIR, 'backups')
+BACKUP_RETENTION_COUNT = int(os.getenv("BACKUP_RETENTION_COUNT", "30"))
+BACKUP_INCLUDE_DATABASE = bool_env("BACKUP_INCLUDE_DATABASE", "1")
 
 # --- ΡΥΘΜΙΣΕΙΣ ΒΑΣΗΣ & ΦΑΚΕΛΩΝ ---
 # ... (υπάρχον κώδικας) ...
@@ -168,7 +201,142 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def is_admin_user():
-    return current_user.is_authenticated and current_user.username == os.getenv("ADMIN_USERNAME", "admin")
+    return current_user.is_authenticated and (
+        getattr(current_user, "sso_admin", False)
+        or current_user.username == os.getenv("ADMIN_USERNAME", "admin")
+    )
+
+@app.context_processor
+def inject_auth_helpers():
+    return {"is_admin_user": is_admin_user}
+
+@app.template_filter("filesize")
+def filesize_filter(value):
+    try:
+        size = float(value or 0)
+    except (TypeError, ValueError):
+        return "0 B"
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if size < 1024 or unit == "TB":
+            if unit == "B":
+                return f"{int(size)} {unit}"
+            return f"{size:.1f} {unit}"
+        size /= 1024
+
+def local_user_admin_allowed():
+    if not is_admin_user():
+        return False
+    if getattr(current_user, "auth_method", "local") == "sso":
+        return ALLOW_LOCAL_USER_ADMIN_FROM_SSO
+    return True
+
+def central_auth_context():
+    kai_groups = [
+        {
+            "name": SSO_KAI_USER_GROUP,
+            "role": "Απλός χρήστης KAI",
+            "description": "Πρόσβαση στην εφαρμογή KAI μέσω SSO.",
+        },
+        {
+            "name": SSO_KAI_ADMIN_GROUP,
+            "role": "Διαχειριστής KAI",
+            "description": "Πρόσβαση KAI και δικαιώματα διαχείρισης μέσα στην εφαρμογή.",
+        },
+        {
+            "name": SSO_GLOBAL_ADMIN_GROUP,
+            "role": "Συνολικός διαχειριστής",
+            "description": "Break-glass/admin πρόσβαση σε όλες τις εφαρμογές SSO.",
+        },
+    ]
+    return {
+        "realm": CENTRAL_AUTH_REALM,
+        "admin_url": CENTRAL_AUTH_ADMIN_URL,
+        "users_url": CENTRAL_AUTH_USERS_URL,
+        "groups_url": CENTRAL_AUTH_GROUPS_URL,
+        "groups": kai_groups,
+        "current_groups": getattr(current_user, "sso_groups", []),
+        "auth_method": getattr(current_user, "auth_method", "local"),
+    }
+
+def parse_sso_groups(value):
+    return [group.strip() for group in (value or "").split(",") if group.strip()]
+
+def normalize_remote_address(value):
+    address = (value or "").strip()
+    if address.startswith("::ffff:"):
+        return address[7:]
+    return address
+
+def request_peer_address():
+    proxy_fix_original = request.environ.get("werkzeug.proxy_fix.orig") or {}
+    return normalize_remote_address(proxy_fix_original.get("REMOTE_ADDR") or request.remote_addr or "")
+
+def is_trusted_sso_proxy():
+    remote_address = request_peer_address()
+    if not remote_address:
+        return False
+    if remote_address == "::1":
+        return True
+    try:
+        peer = ipaddress.ip_address(remote_address)
+    except ValueError:
+        return False
+    for cidr in SSO_TRUSTED_PROXY_CIDRS:
+        try:
+            if peer in ipaddress.ip_network(cidr, strict=False):
+                return True
+        except ValueError:
+            continue
+    return False
+
+def current_sso_user():
+    if not TRUST_SSO_HEADERS or not is_trusted_sso_proxy():
+        return None
+    groups = parse_sso_groups(request.headers.get("X-SSO-Groups", ""))
+    sso_admin = SSO_KAI_ADMIN_GROUP in groups or SSO_GLOBAL_ADMIN_GROUP in groups
+    sso_user = SSO_KAI_USER_GROUP in groups
+    if not (sso_user or sso_admin):
+        return None
+    username = (
+        request.headers.get("X-SSO-Preferred-Username")
+        or request.headers.get("X-SSO-User")
+        or request.headers.get("X-SSO-Email")
+        or ""
+    ).strip()
+    if not username:
+        return None
+    return SSOUser(username, sso_admin=sso_admin, groups=groups)
+
+def sync_sso_session():
+    sso_user = current_sso_user()
+    if not sso_user:
+        if (
+            TRUST_SSO_HEADERS
+            and current_user.is_authenticated
+            and getattr(current_user, "auth_method", "local") == "sso"
+        ):
+            session.pop("sso_user", None)
+            logout_user()
+        return None
+    existing = session.get("sso_user") or {}
+    if (
+        current_user.is_authenticated
+        and getattr(current_user, "auth_method", "local") == "sso"
+        and existing.get("id") == sso_user.id
+        and existing.get("sso_admin") == sso_user.sso_admin
+        and existing.get("sso_groups") == sso_user.sso_groups
+    ):
+        return current_user
+
+    session["sso_user"] = {
+        "id": sso_user.id,
+        "username": sso_user.username,
+        "sso_admin": sso_user.sso_admin,
+        "sso_groups": sso_user.sso_groups,
+    }
+    login_user(sso_user)
+    log_action("LOGIN", "System", f"SSO login: {sso_user.username}")
+    return sso_user
 
 def _get_active_exam_options(option_type, fallback):
     try:
@@ -230,8 +398,25 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(50), unique=True)
     password_hash = db.Column(db.String(200))
 
+class SSOUser(UserMixin):
+    def __init__(self, username, *, sso_admin=False, groups=None):
+        self.id = f"sso:{username}"
+        self.username = username
+        self.auth_method = "sso"
+        self.sso_admin = bool(sso_admin)
+        self.sso_groups = groups or []
+
 @login_manager.user_loader
 def load_user(user_id):
+    if str(user_id).startswith("sso:"):
+        sso_session = session.get("sso_user") or {}
+        if sso_session.get("id") != user_id:
+            return None
+        return SSOUser(
+            sso_session.get("username", ""),
+            sso_admin=sso_session.get("sso_admin", False),
+            groups=sso_session.get("sso_groups", []),
+        )
     return User.query.get(int(user_id))
 
 # --- ΜΟΝΤΕΛΑ ΒΑΣΗΣ ---
@@ -274,8 +459,28 @@ class AuditLog(db.Model):
     target = db.Column(db.String(100))
     details = db.Column(db.String(255))
 
+class BackupRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    filename = db.Column(db.String(255), nullable=False, unique=True)
+    path = db.Column(db.String(500), nullable=False)
+    backup_type = db.Column(db.String(30), default="manual", index=True)
+    status = db.Column(db.String(30), default="RUNNING", index=True)
+    created_by = db.Column(db.String(100))
+    auth_method = db.Column(db.String(30))
+    sso_groups = db.Column(db.Text)
+    file_count = db.Column(db.Integer, default=0)
+    size_bytes = db.Column(db.Integer, default=0)
+    sha256 = db.Column(db.String(64))
+    manifest_json = db.Column(db.Text)
+    verified_at = db.Column(db.DateTime)
+    verify_message = db.Column(db.String(255))
+
 def log_action(action, target, details):
-    user = current_user.username if current_user.is_authenticated else "System"
+    try:
+        user = current_user.username if getattr(current_user, "is_authenticated", False) else "System"
+    except (RuntimeError, AttributeError):
+        user = "System"
     new_log = AuditLog(username=user, action=action, target=target, details=details)
     db.session.add(new_log)
     db.session.commit()
@@ -295,26 +500,250 @@ with app.app_context():
             if not User.query.filter_by(username=admin_user).first():
                 raise
 
-# --- ΚΡΥΠΤΟΓΡΑΦΗΜΕΝΟ BACKUP ΣΥΣΤΗΜΑ ---
-def backup_system():
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    backup_filename = f'backup_KAI_{timestamp}.zip'
-    backup_path = os.path.join(BACKUP_FOLDER, backup_filename)
-    password = required_env("BACKUP_PASSWORD").encode('utf-8')
-    
+def current_actor_context():
     try:
-        with pyzipper.AESZipFile(backup_path, 'w', compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as zf:
-            zf.setpassword(password)
-            for root, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    arcname = os.path.relpath(file_path, app.config['UPLOAD_FOLDER'])
-                    zf.write(file_path, arcname)
-        print(f"[*] ΚΡΥΠΤΟΓΡΑΦΗΜΕΝΟ Backup ολοκληρώθηκε: {backup_filename}")
-        log_action("BACKUP", "System", f"Δημιουργήθηκε ασφαλές αντίγραφο: {backup_filename}")
-    except Exception as e:
-        print(f"[!] Σφάλμα Backup: {e}")
-        log_action("BACKUP_ERROR", "System", f"Αποτυχία δημιουργίας backup: {e}")
+        if current_user.is_authenticated:
+            return {
+                "username": current_user.username,
+                "auth_method": getattr(current_user, "auth_method", "local"),
+                "sso_groups": list(getattr(current_user, "sso_groups", []) or []),
+            }
+    except RuntimeError:
+        pass
+    return {"username": "System", "auth_method": "system", "sso_groups": []}
+
+def backup_password():
+    return required_env("BACKUP_PASSWORD").encode("utf-8")
+
+def safe_backup_path(filename):
+    backup_root = os.path.abspath(BACKUP_FOLDER)
+    path = os.path.abspath(os.path.join(backup_root, os.path.basename(filename)))
+    if os.path.commonpath([backup_root, path]) != backup_root:
+        raise ValueError("Invalid backup path")
+    return path
+
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+def git_revision():
+    version = os.getenv("KAI_APP_VERSION") or os.getenv("APP_VERSION")
+    if version:
+        return version
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception:
+        pass
+    return "unknown"
+
+def iter_directory_files(base_path, archive_prefix, *, exclude_dirs=None):
+    exclude_dirs = set(exclude_dirs or [])
+    root_path = os.path.abspath(base_path)
+    if not os.path.isdir(root_path):
+        return
+    for root, dirs, files in os.walk(root_path):
+        dirs[:] = [item for item in dirs if item not in exclude_dirs and item != "__pycache__"]
+        for filename in files:
+            file_path = os.path.join(root, filename)
+            if not os.path.isfile(file_path):
+                continue
+            rel = os.path.relpath(file_path, root_path).replace("\\", "/")
+            yield file_path, f"{archive_prefix}/{rel}"
+
+def sqlite_database_path():
+    uri = app.config["SQLALCHEMY_DATABASE_URI"]
+    if not uri.startswith("sqlite:///"):
+        return None
+    path = uri.replace("sqlite:///", "", 1)
+    if not os.path.isabs(path):
+        path = os.path.join(BASE_DIR, path)
+    return path
+
+def write_database_dump(temp_dir):
+    if not BACKUP_INCLUDE_DATABASE:
+        note_path = os.path.join(temp_dir, "database_backup_disabled.txt")
+        with open(note_path, "w", encoding="utf-8") as handle:
+            handle.write("Database backup was disabled by BACKUP_INCLUDE_DATABASE=0.\n")
+        return note_path, "database/README.txt", "disabled"
+
+    database_url = app.config["SQLALCHEMY_DATABASE_URI"]
+    if database_url.startswith("postgresql"):
+        pg_dump = shutil.which("pg_dump")
+        if not pg_dump:
+            raise RuntimeError("pg_dump is not installed in the app container")
+        dump_path = os.path.join(temp_dir, "kai_database.dump")
+        result = subprocess.run(
+            [pg_dump, "--dbname", database_url, "--format", "custom", "--file", dump_path],
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+        if result.returncode != 0:
+            message = (result.stderr or result.stdout or "pg_dump failed").strip()
+            raise RuntimeError(message[:240])
+        return dump_path, "database/kai_database.dump", "postgresql-custom"
+
+    sqlite_path = sqlite_database_path()
+    if sqlite_path and os.path.exists(sqlite_path):
+        dump_path = os.path.join(temp_dir, "kai_exams.sqlite3")
+        shutil.copy2(sqlite_path, dump_path)
+        return dump_path, "database/kai_exams.sqlite3", "sqlite-copy"
+
+    note_path = os.path.join(temp_dir, "database_not_found.txt")
+    with open(note_path, "w", encoding="utf-8") as handle:
+        handle.write("No database file or supported DATABASE_URL was found.\n")
+    return note_path, "database/README.txt", "missing"
+
+def build_backup_manifest(actor, backup_type, database_mode, entries):
+    return {
+        "app": "KAI App",
+        "format_version": 2,
+        "created_at_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "created_by": actor["username"],
+        "auth_method": actor["auth_method"],
+        "sso_groups": actor["sso_groups"],
+        "backup_type": backup_type,
+        "app_revision": git_revision(),
+        "database_mode": database_mode,
+        "entries": entries,
+    }
+
+def enforce_backup_retention():
+    if BACKUP_RETENTION_COUNT <= 0:
+        return
+    records = (
+        BackupRecord.query
+        .filter(BackupRecord.status.in_(["CREATED", "VERIFIED"]))
+        .order_by(BackupRecord.created_at.desc())
+        .all()
+    )
+    for record in records[BACKUP_RETENTION_COUNT:]:
+        try:
+            if os.path.exists(record.path):
+                os.remove(record.path)
+            record.status = "PRUNED"
+            record.verify_message = f"Pruned by retention policy: keep last {BACKUP_RETENTION_COUNT}"
+        except Exception as exc:
+            record.status = "PRUNE_FAILED"
+            record.verify_message = str(exc)[:255]
+    db.session.commit()
+
+def create_backup_record(backup_type="manual", actor=None):
+    actor = actor or current_actor_context()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_filename = f"backup_KAI_{timestamp}_{backup_type}.zip"
+    backup_path = safe_backup_path(backup_filename)
+    record = BackupRecord(
+        filename=backup_filename,
+        path=backup_path,
+        backup_type=backup_type,
+        status="RUNNING",
+        created_by=actor["username"],
+        auth_method=actor["auth_method"],
+        sso_groups=json.dumps(actor["sso_groups"], ensure_ascii=False),
+    )
+    db.session.add(record)
+    db.session.commit()
+
+    entries = []
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            database_path, database_arcname, database_mode = write_database_dump(temp_dir)
+            archive_sources = [(database_path, database_arcname)]
+            archive_sources.extend(iter_directory_files(app.config["UPLOAD_FOLDER"], "static/scans"))
+            archive_sources.extend(iter_directory_files(
+                app.config["TEMPLATE_FOLDER"],
+                "static/templates",
+                exclude_dirs={"devs_backup"},
+            ))
+            for _, arcname in archive_sources:
+                entries.append(arcname)
+
+            manifest = build_backup_manifest(actor, backup_type, database_mode, entries)
+            with pyzipper.AESZipFile(
+                backup_path,
+                "w",
+                compression=pyzipper.ZIP_DEFLATED,
+                encryption=pyzipper.WZ_AES,
+            ) as archive:
+                archive.setpassword(backup_password())
+                archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
+                for file_path, arcname in archive_sources:
+                    archive.write(file_path, arcname)
+
+        record.status = "CREATED"
+        record.file_count = len(entries) + 1
+        record.size_bytes = os.path.getsize(backup_path)
+        record.sha256 = sha256_file(backup_path)
+        record.manifest_json = json.dumps(manifest, ensure_ascii=False)
+        db.session.commit()
+        log_action("BACKUP", f"BackupRecord:{record.id}", f"Created {backup_filename}")
+        enforce_backup_retention()
+        return record
+    except Exception as exc:
+        db.session.rollback()
+        if os.path.exists(backup_path):
+            try:
+                os.remove(backup_path)
+            except OSError:
+                pass
+        record = BackupRecord.query.get(record.id)
+        if record:
+            record.status = "FAILED"
+            record.verify_message = str(exc)[:255]
+            db.session.commit()
+        log_action("BACKUP_ERROR", "System", f"Failed to create backup: {str(exc)[:200]}")
+        raise
+
+def verify_backup_record(record):
+    if not record or not os.path.exists(record.path):
+        raise FileNotFoundError("Backup archive was not found")
+
+    current_sha256 = sha256_file(record.path)
+    if record.sha256 and current_sha256 != record.sha256:
+        raise RuntimeError("Backup SHA-256 does not match the stored value")
+
+    with pyzipper.AESZipFile(record.path, "r") as archive:
+        archive.setpassword(backup_password())
+        names = archive.namelist()
+        if "manifest.json" not in names:
+            raise RuntimeError("Backup manifest is missing")
+        manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+        if manifest.get("app") != "KAI App":
+            raise RuntimeError("Backup manifest is not for KAI App")
+        for name in names:
+            archive.read(name)
+
+    record.status = "VERIFIED"
+    record.verified_at = datetime.utcnow()
+    record.verify_message = f"OK: {len(names)} encrypted entries verified"
+    db.session.commit()
+    log_action("BACKUP_VERIFY", f"BackupRecord:{record.id}", record.verify_message)
+    return True
+
+# --- ΚΡΥΠΤΟΓΡΑΦΗΜΕΝΟ BACKUP ΣΥΣΤΗΜΑ ---
+def backup_system(backup_type="scheduled"):
+    with app.app_context():
+        try:
+            record = create_backup_record(backup_type=backup_type, actor=current_actor_context())
+            print(f"[*] Encrypted backup completed: {record.filename}")
+            return record
+        except Exception as exc:
+            print(f"[!] Backup error: {exc}")
+            return None
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=backup_system, trigger="cron", hour=3, minute=0)
@@ -323,10 +752,72 @@ scheduler.start()
 @app.route('/force_backup')
 @login_required
 def force_backup():
-    if current_user.username == os.getenv("ADMIN_USERNAME", "admin"):
-        backup_system()
-        flash("Το κρυπτογραφημένο Backup δημιουργήθηκε.", "success")
-    return redirect(url_for('audit_logs'))
+    if is_admin_user():
+        record = backup_system(backup_type="manual")
+        if record:
+            flash(f"Το backup δημιουργήθηκε: {record.filename}", "success")
+        else:
+            flash("Αποτυχία δημιουργίας backup.", "danger")
+    return redirect(url_for('manage_backups'))
+
+@app.route('/manage_backups')
+@login_required
+def manage_backups():
+    if not is_admin_user():
+        flash("Δεν έχετε δικαίωμα πρόσβασης.", "danger")
+        return redirect(url_for('index'))
+    backups = BackupRecord.query.order_by(BackupRecord.created_at.desc()).limit(100).all()
+    return render_template(
+        'manage_backups.html',
+        backups=backups,
+        retention_count=BACKUP_RETENTION_COUNT,
+        include_database=BACKUP_INCLUDE_DATABASE,
+    )
+
+@app.route('/backups/create', methods=['POST'])
+@login_required
+def create_backup_route():
+    if not is_admin_user():
+        flash("Δεν έχετε δικαίωμα πρόσβασης.", "danger")
+        return redirect(url_for('index'))
+    try:
+        record = create_backup_record(backup_type="manual")
+        flash(f"Το backup δημιουργήθηκε: {record.filename}", "success")
+    except Exception as exc:
+        flash(f"Αποτυχία δημιουργίας backup: {exc}", "danger")
+    return redirect(url_for('manage_backups'))
+
+@app.route('/backups/<int:backup_id>/verify', methods=['POST'])
+@login_required
+def verify_backup_route(backup_id):
+    if not is_admin_user():
+        flash("Δεν έχετε δικαίωμα πρόσβασης.", "danger")
+        return redirect(url_for('index'))
+    record = BackupRecord.query.get_or_404(backup_id)
+    try:
+        verify_backup_record(record)
+        flash("Το backup επαληθεύτηκε επιτυχώς.", "success")
+    except Exception as exc:
+        record.status = "VERIFY_FAILED"
+        record.verified_at = datetime.utcnow()
+        record.verify_message = str(exc)[:255]
+        db.session.commit()
+        log_action("BACKUP_VERIFY_ERROR", f"BackupRecord:{record.id}", record.verify_message)
+        flash(f"Αποτυχία επαλήθευσης backup: {exc}", "danger")
+    return redirect(url_for('manage_backups'))
+
+@app.route('/backups/<int:backup_id>/download')
+@login_required
+def download_backup_route(backup_id):
+    if not is_admin_user():
+        flash("Δεν έχετε δικαίωμα πρόσβασης.", "danger")
+        return redirect(url_for('index'))
+    record = BackupRecord.query.get_or_404(backup_id)
+    if not os.path.exists(record.path):
+        flash("Το αρχείο backup δεν βρέθηκε στον δίσκο.", "danger")
+        return redirect(url_for('manage_backups'))
+    log_action("BACKUP_DOWNLOAD", f"BackupRecord:{record.id}", record.filename)
+    return send_file(record.path, as_attachment=True, download_name=record.filename)
 
 # --- ΔΙΑΣΥΝΔΕΣΗ ΜΕ ΑΤΛΑΣ ---
 def get_atlas_data(amka):
@@ -369,6 +860,8 @@ def ratelimit_handler(e):
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")  # ΕΠΙΤΡΕΠΕΙ ΜΟΝΟ 5 ΠΡΟΣΠΑΘΕΙΕΣ ΤΟ ΛΕΠΤΟ ΑΝΑ IP
 def login():
+    if request.method == 'GET' and current_user.is_authenticated:
+        return redirect(url_for('index'))
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -385,12 +878,16 @@ def login():
 @login_required
 def logout():
     log_action("LOGOUT", "System", "Αποσύνδεση")
+    session.pop("sso_user", None)
     logout_user()
     return redirect(url_for('login'))
 
 @app.route('/change_password', methods=['GET', 'POST'])
 @login_required
 def change_password():
+    if getattr(current_user, "auth_method", "local") == "sso":
+        flash("Η αλλαγή κωδικού γίνεται από το κεντρικό SSO.", "warning")
+        return redirect(url_for('index'))
     if request.method == 'POST':
         old_password = request.form.get('old_password')
         new_password = request.form.get('new_password')
@@ -518,7 +1015,7 @@ def download_draft(exam_id):
     template_path = os.path.join(app.config['TEMPLATE_FOLDER'], DRAFT_TEMPLATE_FILE)
     if not os.path.exists(template_path):
         flash(f'Το αρχείο "{DRAFT_TEMPLATE_FILE}" δεν βρέθηκε στον φάκελο templates.', 'danger')
-        return redirect(url_for('update_exam', exam_id=exam.id))
+        return redirect(url_for('index'))
 
     doc = DocxTemplate(template_path)
     doc.render({
@@ -730,19 +1227,29 @@ def manage_users():
     # Αυστηρός έλεγχος: Μόνο ο admin μπαίνει εδώ
     if not is_admin_user():
         flash("Δεν έχετε δικαίωμα πρόσβασης στη διαχείριση χρηστών.", "danger")
-        return redirect(url_for('update_exam', exam_id=exam.id))
+        return redirect(url_for('index'))
     
-    users = User.query.all()
-    return render_template('manage_users.html', users=users)
+    users = User.query.order_by(User.username.asc()).all()
+    return render_template(
+        'manage_users.html',
+        users=users,
+        central_auth=central_auth_context(),
+        legacy_user_admin_allowed=local_user_admin_allowed(),
+        admin_username=os.getenv("ADMIN_USERNAME", "admin"),
+    )
 
 @app.route('/add_user', methods=['POST'])
 @login_required
 def add_user():
-    if not is_admin_user():
-        return redirect(url_for('index'))
+    if not local_user_admin_allowed():
+        flash("Η δημιουργία παραγωγικών χρηστών γίνεται πλέον από το κεντρικό Auth/Keycloak. Οι τοπικοί χρήστες είναι μόνο emergency fallback.", "warning")
+        return redirect(url_for('manage_users'))
     
-    new_username = request.form.get('new_username').strip()
+    new_username = (request.form.get('new_username') or '').strip()
     new_password = request.form.get('new_password')
+    if not new_username or not new_password:
+        flash("Συμπληρώστε username και κωδικό για τον τοπικό fallback χρήστη.", "danger")
+        return redirect(url_for('manage_users'))
     
     if User.query.filter_by(username=new_username).first():
         flash(f'Ο χρήστης {new_username} υπάρχει ήδη!', 'danger')
@@ -759,8 +1266,9 @@ def add_user():
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
-    if not is_admin_user():
-        return redirect(url_for('index'))
+    if not local_user_admin_allowed():
+        flash("Η διαγραφή παραγωγικών χρηστών γίνεται πλέον από το κεντρικό Auth/Keycloak. Οι τοπικοί χρήστες δεν αλλάζουν από SSO session.", "warning")
+        return redirect(url_for('manage_users'))
         
     user_to_delete = User.query.get_or_404(user_id)
     

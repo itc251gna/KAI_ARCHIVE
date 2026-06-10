@@ -29,10 +29,19 @@ services:
       - GUACD_HOSTNAME=kai-guacd
       - GUACD_PORT=4822
       - GUACAMOLE_HOME=/etc/guacamole
+      - HTTP_AUTH_ENABLED=true
+      - HTTP_AUTH_HEADER=X-Guacamole-User
+      - POSTGRESQL_ENABLED=true
+      - POSTGRESQL_HOSTNAME=kai-db
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_DATABASE=guacamole_db
+      - POSTGRESQL_USERNAME=${POSTGRES_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ./guacamole_config:/etc/guacamole
     depends_on:
       - kai-guacd
+      - kai-db
     restart: always
 
   kai-app:
