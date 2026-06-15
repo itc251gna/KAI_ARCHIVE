@@ -118,6 +118,7 @@
                     </div>
 
                     <div class="tab-pane fade" id="appointments" role="tabpanel" tabindex="0">
+                        {% if appointments_feature_enabled %}
                         <div class="text-center py-5">
                             <h4 class="text-info mb-3">Συνδεθείτε στο σύστημα Ηλεκτρονικών Ραντεβού του ΟΠΣΥΕΔ</h4>
                             <p class="text-muted mb-4">Χρησιμοποιήστε τους προσωπικούς κωδικούς θέσης που σας έχουν δοθεί από τον ΟΠΣΥΕΔ</p>
@@ -143,6 +144,15 @@
                                 📅 Σύστημα e-Ραντεβού
                             </a>
                         </div>
+
+                        {% else %}
+                        <div class="text-center py-5">
+                            <div class="alert alert-info border-0 shadow-sm mx-auto mb-0" style="max-width: 620px;">
+                                <h5 class="fw-bold mb-2">Ηλεκτρονικά Ραντεβού</h5>
+                                <p class="mb-0">{{ appointments_disabled_message }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
 
                     <div class="tab-pane fade" id="help" role="tabpanel" tabindex="0">

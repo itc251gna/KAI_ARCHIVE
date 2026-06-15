@@ -84,6 +84,8 @@ CENTRAL_AUTH_GROUPS_URL = os.getenv(
     f"https://auth.251gh.local/admin/master/console/#/{CENTRAL_AUTH_REALM}/groups",
 )
 ALLOW_LOCAL_USER_ADMIN_FROM_SSO = bool_env("ALLOW_LOCAL_USER_ADMIN_FROM_SSO", "0")
+APPOINTMENTS_FEATURE_ENABLED = bool_env("APPOINTMENTS_FEATURE_ENABLED", "0")
+APPOINTMENTS_DISABLED_MESSAGE = "Τα αντικείμενα του παρόντος θα ενεργοποιηθούν σε μελλοντική αναβάθμιση."
 
 # Middleware Ασφαλείας: Ακόμα κι αν ο Proxy κάνει λάθος, εμείς επιβάλλουμε το HTTPS εσωτερικά
 class ForceHTTPSMiddleware:
@@ -209,7 +211,11 @@ def is_admin_user():
 
 @app.context_processor
 def inject_auth_helpers():
-    return {"is_admin_user": is_admin_user}
+    return {
+        "is_admin_user": is_admin_user,
+        "appointments_feature_enabled": APPOINTMENTS_FEATURE_ENABLED,
+        "appointments_disabled_message": APPOINTMENTS_DISABLED_MESSAGE,
+    }
 
 @app.template_filter("filesize")
 def filesize_filter(value):
@@ -1563,7 +1569,10 @@ def his_system():
 @login_required
 def appointments():
     # Καταγραφή στο Audit Log για ιχνηλασιμότητα ISO 27799
-    log_action("VIEW_APPOINTMENTS", "System", "Προβολή συστήματος ηλεκτρονικών ραντεβού (opsyed)")
+    if APPOINTMENTS_FEATURE_ENABLED:
+        log_action("VIEW_APPOINTMENTS", "System", "Προβολή συστήματος ηλεκτρονικών ραντεβού (opsyed)")
+    else:
+        log_action("VIEW_APPOINTMENTS_DISABLED", "System", "Appointments feature is temporarily disabled")
     return render_template('appointments.html')
 
 if __name__ == '__main__':

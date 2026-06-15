@@ -89,6 +89,25 @@ BACKUP_RETENTION_COUNT=30
 BACKUP_INCLUDE_DATABASE=1
 ```
 
+## Appointments Feature Flag
+
+The "Ηλεκτρονικά Ραντεβού" tab stays visible, but the production links/content
+are controlled by:
+
+```dotenv
+APPOINTMENTS_FEATURE_ENABLED=0
+```
+
+Default `0` hides the Google Form, OPSYED iframe, and external appointment
+links behind the message:
+
+```text
+Τα αντικείμενα του παρόντος θα ενεργοποιηθούν σε μελλοντική αναβάθμιση.
+```
+
+Set `APPOINTMENTS_FEATURE_ENABLED=1` and rebuild/recreate the app container to
+restore the existing appointment content.
+
 ## Central SSO
 
 For the intranet SSO gateway rollout, KAI can accept trusted SSO headers while keeping the local PostgreSQL username/password login as fallback:
