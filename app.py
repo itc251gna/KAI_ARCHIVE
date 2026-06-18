@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session, jsonify
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -441,6 +442,7 @@ class Exam(db.Model):
     monada = db.Column(db.String(50))
     amka = db.Column(db.String(20))
     hm_gen = db.Column(db.String(20))
+    kinito = db.Column(db.String(30))
     katigoria = db.Column(db.String(50))
     skopos = db.Column(db.String(50))  
     exam_date = db.Column(db.DateTime, default=datetime.utcnow)
@@ -507,8 +509,19 @@ def create_all_with_retry(retries=3, delay_seconds=0.5):
                 raise
             time.sleep(delay_seconds)
 
+def ensure_schema_upgrades():
+    inspector = inspect(db.engine)
+    exam_columns = {column["name"] for column in inspector.get_columns(Exam.__tablename__)}
+    if "kinito" not in exam_columns:
+        preparer = db.engine.dialect.identifier_preparer
+        table_name = preparer.quote(Exam.__tablename__)
+        column_name = preparer.quote("kinito")
+        with db.engine.begin() as connection:
+            connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} VARCHAR(30)"))
+
 with app.app_context():
     create_all_with_retry()
+    ensure_schema_upgrades()
     _seed_exam_options()
     admin_user = os.getenv("ADMIN_USERNAME", "admin")
     if not User.query.filter_by(username=admin_user).first():
@@ -989,7 +1002,8 @@ def search_results():
     local_data = {
         'asma': last_exam.asma if last_exam else '', 
         'vathmos': last_exam.vathmos if last_exam else '',
-        'monada': last_exam.monada if last_exam else ''
+        'monada': last_exam.monada if last_exam else '',
+        'kinito': last_exam.kinito if last_exam else ''
     }
     
     # Πηγαίνει ΠΑΝΤΑ στο results.html για νέα εξέταση
@@ -1016,6 +1030,7 @@ def create_exam():
         monada=request.form.get('monada'),
         amka=request.form.get('amka'), 
         hm_gen=request.form.get('hm_gen'),
+        kinito=(request.form.get('kinito') or '').strip(),
         skopos=request.form.get('skopos'),
         katigoria=request.form.get('katigoria'), 
         exam_date=parsed_date,  
@@ -1044,7 +1059,8 @@ def download_draft(exam_id):
         'EXAM_ID': str(exam.id), 'EPONYMO': exam.eponymo, 'ONOMA': exam.onoma, 'PATRONYMO': exam.patronymo,
         'ASMA': exam.asma, 'VATHMOS': exam.vathmos, 
         'KATIGORIA': exam.katigoria,  
-        'MONADA': exam.monada, 'AMKA': exam.amka, 'HM_GEN': exam.hm_gen, 
+        'MONADA': exam.monada, 'AMKA': exam.amka, 'HM_GEN': exam.hm_gen,
+        'KINITO': exam.kinito or '',
         'LAST_EXAM': last_porisma, 'SKOPOS': exam.skopos,
         'EXAM_DATE': exam.exam_date.strftime('%d/%m/%Y')  
     })

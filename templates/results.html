@@ -43,12 +43,16 @@
                     <input type="text" class="form-control" name="asma" value="{{ local_data['asma'] if local_data else '' }}" required placeholder="π.χ. 12345">
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label class="form-label fw-bold">Βαθμός / Ειδικότητα *</label>
+                    <label class="form-label fw-bold">Βαθμός/Ειδικότητα *</label>
                     <input type="text" class="form-control" name="vathmos" value="{{ local_data['vathmos'] if local_data else '' }}" required placeholder="π.χ. ΣΜΧΟΣ (Ι)">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label fw-bold">Μονάδα *</label>
                     <input type="text" class="form-control" name="monada" value="{{ local_data['monada'] if local_data else '' }}" required placeholder="π.χ. 114 ΠΜ">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Κινητό τηλέφωνο</label>
+                    <input type="text" class="form-control" name="kinito" value="{{ local_data['kinito'] if local_data else '' }}" maxlength="30" placeholder="π.χ. 69XXXXXXXX">
                 </div>
             </div>
 
