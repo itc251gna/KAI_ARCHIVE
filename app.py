@@ -209,10 +209,14 @@ def is_admin_user():
         or current_user.username == os.getenv("ADMIN_USERNAME", "admin")
     )
 
+def can_change_password():
+    return current_user.is_authenticated and getattr(current_user, "auth_method", "local") != "sso"
+
 @app.context_processor
 def inject_auth_helpers():
     return {
         "is_admin_user": is_admin_user,
+        "can_change_password": can_change_password,
         "appointments_feature_enabled": APPOINTMENTS_FEATURE_ENABLED,
         "appointments_disabled_message": APPOINTMENTS_DISABLED_MESSAGE,
     }
@@ -903,7 +907,7 @@ def logout():
 @app.route('/change_password', methods=['GET', 'POST'])
 @login_required
 def change_password():
-    if getattr(current_user, "auth_method", "local") == "sso":
+    if not can_change_password():
         flash("Η αλλαγή κωδικού γίνεται από το κεντρικό SSO.", "warning")
         return redirect(url_for('index'))
     if request.method == 'POST':

@@ -162,7 +162,9 @@
                         <span class="badge bg-danger ms-2">Διαχειριστής</span>
                     {% endif %}
                 </span>
+                {% if can_change_password() %}
                 <a href="{{ url_for('change_password') }}" class="btn btn-warning btn-sm fw-bold me-2" style="border-radius: 8px;">🔑 Αλλαγή Κωδικού</a>
+                {% endif %}
                 <a href="{{ url_for('logout') }}" class="btn btn-light btn-sm fw-bold text-primary" style="border-radius: 8px;">Έξοδος</a>
             </div>
             {% endif %}

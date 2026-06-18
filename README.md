@@ -127,4 +127,6 @@ ALLOW_LOCAL_USER_ADMIN_FROM_SSO=0
 
 SSO users are transient Flask-Login users and are not inserted into PostgreSQL. `/apps/kai/users` gets normal KAI access; `/apps/kai/admins` and `/apps/global/admins` get admin behavior through `is_admin_user()`.
 
+For SSO sessions, password changes are handled by the central SSO/Keycloak system. KAI hides the in-app "Αλλαγή Κωδικού" navbar action for SSO users and keeps `/change_password` available only for local fallback users.
+
 The `/manage_users` page is central-Auth aware. In production SSO sessions it links administrators to Keycloak and shows the KAI rights groups. The old local user table remains visible only as an emergency/local-login fallback and is read-only for SSO admins unless `ALLOW_LOCAL_USER_ADMIN_FROM_SSO=1` is deliberately set.
