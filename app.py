@@ -213,11 +213,29 @@ def is_admin_user():
 def can_change_password():
     return current_user.is_authenticated and getattr(current_user, "auth_method", "local") != "sso"
 
+def format_display_date(value):
+    if not value:
+        return ""
+    if isinstance(value, datetime):
+        return value.strftime('%d/%m/%Y')
+
+    text_value = str(value).strip()
+    if not text_value:
+        return ""
+
+    for date_format in ('%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%m/%d/%Y', '%d/%m/%Y'):
+        try:
+            return datetime.strptime(text_value, date_format).strftime('%d/%m/%Y')
+        except ValueError:
+            continue
+    return text_value
+
 @app.context_processor
 def inject_auth_helpers():
     return {
         "is_admin_user": is_admin_user,
         "can_change_password": can_change_password,
+        "format_display_date": format_display_date,
         "appointments_feature_enabled": APPOINTMENTS_FEATURE_ENABLED,
         "appointments_disabled_message": APPOINTMENTS_DISABLED_MESSAGE,
     }
@@ -234,6 +252,10 @@ def filesize_filter(value):
                 return f"{int(size)} {unit}"
             return f"{size:.1f} {unit}"
         size /= 1024
+
+@app.template_filter("dmy")
+def dmy_filter(value):
+    return format_display_date(value)
 
 def local_user_admin_allowed():
     if not is_admin_user():
@@ -1099,7 +1121,7 @@ def download_certificate(exam_id):
             'HM_GEN': exam.hm_gen,
             'EXAM_DATE': exam.exam_date.strftime('%d/%m/%Y'),
             'PORISMA': exam.porisma,
-            'VALID_UNTIL': exam.valid_until if exam.valid_until else '-'
+            'VALID_UNTIL': format_display_date(exam.valid_until) if exam.valid_until else '-'
         }
         doc.render(context)
         
@@ -1148,6 +1170,58 @@ def pending_exams():
     # Τραβάμε από τη βάση όσες εξετάσεις έχουν πόρισμα "ΕΚΚΡΕΜΕΙ", ταξινομημένες από την παλαιότερη στη νεότερη
     pending = Exam.query.filter_by(porisma='ΕΚΚΡΕΜΕΙ').order_by(Exam.exam_date.asc()).all()
     return render_template('pending.html', exams=pending)
+
+@app.route('/exam_reports')
+@login_required
+def exam_reports():
+    today = datetime.now().date()
+    default_start = today.replace(day=1)
+    start_raw = request.args.get('start_date') or default_start.isoformat()
+    end_raw = request.args.get('end_date') or today.isoformat()
+    selected_skopos = request.args.get('skopos', 'ΕΤΗΣΙΑ')
+
+    try:
+        start_date = datetime.strptime(start_raw, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_raw, '%Y-%m-%d').date()
+    except ValueError:
+        flash('Μη έγκυρο χρονικό διάστημα αναφοράς.', 'danger')
+        start_date = default_start
+        end_date = today
+        start_raw = start_date.isoformat()
+        end_raw = end_date.isoformat()
+
+    if start_date > end_date:
+        flash('Η ημερομηνία έναρξης δεν μπορεί να είναι μετά την ημερομηνία λήξης.', 'warning')
+        start_date, end_date = end_date, start_date
+        start_raw = start_date.isoformat()
+        end_raw = end_date.isoformat()
+
+    start_dt = datetime.combine(start_date, datetime.min.time())
+    end_dt = datetime.combine(end_date + timedelta(days=1), datetime.min.time())
+    query = Exam.query.filter(
+        Exam.porisma != 'ΕΚΚΡΕΜΕΙ',
+        Exam.exam_date >= start_dt,
+        Exam.exam_date < end_dt
+    )
+
+    if selected_skopos and selected_skopos != '__all__':
+        query = query.filter(Exam.skopos == selected_skopos)
+
+    exams = query.order_by(
+        Exam.exam_date.asc(),
+        Exam.monada.asc(),
+        Exam.eponymo.asc(),
+        Exam.onoma.asc()
+    ).all()
+
+    return render_template(
+        'exam_reports.html',
+        exams=exams,
+        start_date=start_raw,
+        end_date=end_raw,
+        selected_skopos=selected_skopos,
+        skopoi=get_exam_purposes()
+    )
 
 @app.route('/update_exam/<int:exam_id>', methods=['GET', 'POST'])
 @login_required

@@ -70,14 +70,19 @@
                         </div>
 
                         <div class="row g-2 mt-2">
-                            <div class="col-sm-6">
+                            <div class="col-sm-4">
                                 <a href="/download_medical_history" class="btn btn-outline-primary btn-glass py-2 w-100 fw-bold shadow-sm" target="_blank">
                                     🖨️ Εκτύπωση Δελτίου Ιατρικού Ιστορικού
                                 </a>
                             </div>
-                            <div class="col-sm-6">
+                            <div class="col-sm-4">
                                 <a href="/pending_exams" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm">
                                     ⏳ Λίστα Εκκρεμών
+                                </a>
+                            </div>
+                            <div class="col-sm-4">
+                                <a href="{{ url_for('exam_reports') }}" class="btn btn-outline-success btn-lg w-100 fw-bold shadow-sm">
+                                    🧾 Λίστα ΔΥΕ
                                 </a>
                             </div>
                         </div>

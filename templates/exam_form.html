@@ -61,9 +61,13 @@
                         
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Ισχύει μέχρι πότε...</label>
+                            {% if exam.porisma != 'ΕΚΚΡΕΜΕΙ' %}
+                            <input type="text" id="valid_until" class="form-control text-muted" value="{{ format_display_date(exam.valid_until) if exam.valid_until else '-' }}" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                            {% else %}
                             <input type="date" id="valid_until" name="valid_until" class="form-control {% if exam.porisma != 'ΕΚΚΡΕΜΕΙ' %}text-muted{% endif %}" 
                                    placeholder="π.χ. 15/10/2025" value="{{ exam.valid_until if exam.valid_until else '' }}" required
                                    {% if exam.porisma != 'ΕΚΚΡΕΜΕΙ' %}readonly style="background-color: #e9ecef; cursor: not-allowed;"{% endif %}>
+                            {% endif %}
                         </div>
                     </div>
                     

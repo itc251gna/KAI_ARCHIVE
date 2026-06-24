@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    @media print {
+        body {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+        nav,
+        .watermark-side,
+        .no-print,
+        .alert {
+            display: none !important;
+        }
+        .container {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+        .card {
+            border: 0 !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+        }
+        .card-body {
+            padding: 0 !important;
+        }
+        .print-header {
+            display: block !important;
+        }
+        .report-table {
+            font-size: 10pt;
+        }
+        .report-table th,
+        .report-table td {
+            border: 1px solid #444 !important;
+            padding: 4px 5px !important;
+            vertical-align: middle !important;
+        }
+        .report-table thead th {
+            background: #eeeeee !important;
+            color: #000000 !important;
+        }
+    }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center no-print">
+                <h5 class="mb-0">Λίστα Εξετάσεων ΔΥΕ</h5>
+                <a href="{{ url_for('index') }}" class="btn btn-light btn-sm">Αρχική</a>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('exam_reports') }}" class="row g-3 align-items-end mb-4 no-print">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Από</label>
+                        <input type="date" class="form-control" name="start_date" value="{{ start_date }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Έως</label>
+                        <input type="date" class="form-control" name="end_date" value="{{ end_date }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Σκοπός</label>
+                        <select class="form-select" name="skopos">
+                            <option value="__all__" {% if selected_skopos == '__all__' %}selected{% endif %}>Όλοι οι σκοποί</option>
+                            {% for skopos in skopoi %}
+                            <option value="{{ skopos }}" {% if selected_skopos == skopos %}selected{% endif %}>{{ skopos }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">Φιλτράρισμα</button>
+                        <button type="button" class="btn btn-success flex-fill" onclick="window.print()">Εκτύπωση</button>
+                    </div>
+                </form>
+
+                <div class="print-header d-none text-center mb-3">
+                    <h4 class="mb-1">ΚΕΝΤΡΟ ΑΕΡΟΠΟΡΙΚΗΣ ΙΑΤΡΙΚΗΣ</h4>
+                    <h5 class="mb-2">Λίστα Εξετάσεων ΔΥΕ</h5>
+                    <div>
+                        Περίοδος: {{ start_date|dmy }} - {{ end_date|dmy }}
+                        {% if selected_skopos != '__all__' %}
+                        | Σκοπός: {{ selected_skopos }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="fw-bold">Αποτελέσματα: {{ exams|length }}</div>
+                    <div class="text-muted small no-print">
+                        {{ start_date|dmy }} - {{ end_date|dmy }}
+                        {% if selected_skopos != '__all__' %}
+                        | {{ selected_skopos }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle report-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">#</th>
+                                <th>Ημ/νία</th>
+                                <th>Ονοματεπώνυμο</th>
+                                <th>Πατρώνυμο</th>
+                                <th>ΑΣΜΑ</th>
+                                <th>Βαθμός/Ειδ.</th>
+                                <th>Μονάδα</th>
+                                <th>Κατηγορία</th>
+                                <th>Πόρισμα</th>
+                                <th>Ισχύει έως</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exam in exams %}
+                            <tr>
+                                <td class="text-center">{{ loop.index }}</td>
+                                <td>{{ exam.exam_date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ exam.eponymo }} {{ exam.onoma }}</td>
+                                <td>{{ exam.patronymo }}</td>
+                                <td>{{ exam.asma }}</td>
+                                <td>{{ exam.vathmos }}</td>
+                                <td>{{ exam.monada }}</td>
+                                <td>{{ exam.katigoria }}</td>
+                                <td>{{ exam.porisma }}</td>
+                                <td>{{ format_display_date(exam.valid_until) if exam.valid_until else '-' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-4">Δεν βρέθηκαν ολοκληρωμένες εξετάσεις για το επιλεγμένο διάστημα.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
