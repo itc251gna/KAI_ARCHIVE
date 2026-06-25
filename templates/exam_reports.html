@@ -1,10 +1,69 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
+    .report-toolbar-card {
+        border-radius: 8px;
+    }
+
+    .report-table {
+        table-layout: fixed;
+    }
+
+    .report-table th,
+    .report-table td {
+        line-height: 1.25;
+    }
+
+    .report-table td {
+        overflow-wrap: anywhere;
+    }
+
+    .report-table .col-index {
+        width: 4%;
+    }
+
+    .report-table .col-date,
+    .report-table .col-valid {
+        width: 8%;
+    }
+
+    .report-table .col-name {
+        width: 17%;
+    }
+
+    .report-table .col-patronymo {
+        width: 10%;
+    }
+
+    .report-table .col-asma {
+        width: 8%;
+    }
+
+    .report-table .col-vathmos {
+        width: 12%;
+    }
+
+    .report-table .col-monada {
+        width: 12%;
+    }
+
+    .report-table .col-katigoria,
+    .report-table .col-porisma {
+        width: 10%;
+    }
+
+    @page {
+        size: A4 landscape;
+        margin: 10mm 8mm;
+    }
+
     @media print {
+        html,
         body {
             background: #ffffff !important;
             color: #000000 !important;
+            width: 100% !important;
+            margin: 0 !important;
         }
         nav,
         .watermark-side,
@@ -15,6 +74,7 @@
         .container {
             max-width: 100% !important;
             padding: 0 !important;
+            margin: 0 !important;
         }
         .card {
             border: 0 !important;
@@ -26,26 +86,50 @@
         }
         .print-header {
             display: block !important;
+            margin-bottom: 6mm !important;
+            padding-bottom: 3mm !important;
+            border-bottom: 1px solid #333 !important;
+        }
+        .report-summary {
+            margin-bottom: 3mm !important;
+            font-size: 9.5pt !important;
+        }
+        .table-responsive {
+            overflow: visible !important;
         }
         .report-table {
-            font-size: 10pt;
+            width: 100% !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important;
+            font-size: 8.7pt;
+            margin: 0 !important;
         }
         .report-table th,
         .report-table td {
             border: 1px solid #444 !important;
-            padding: 4px 5px !important;
+            padding: 3px 4px !important;
+            line-height: 1.15 !important;
             vertical-align: middle !important;
+            overflow-wrap: anywhere !important;
         }
         .report-table thead th {
             background: #eeeeee !important;
             color: #000000 !important;
+            font-weight: 700 !important;
+            text-align: center !important;
+        }
+        .report-table thead {
+            display: table-header-group;
+        }
+        .report-table tr {
+            page-break-inside: avoid;
         }
     }
 </style>
 
 <div class="row">
     <div class="col-12">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm report-toolbar-card">
             <div class="card-header d-flex justify-content-between align-items-center no-print">
                 <h5 class="mb-0">Λίστα Εξετάσεων ΔΥΕ</h5>
                 <a href="{{ url_for('index') }}" class="btn btn-light btn-sm">Αρχική</a>
@@ -86,7 +170,7 @@
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-2 report-summary">
                     <div class="fw-bold">Αποτελέσματα: {{ exams|length }}</div>
                     <div class="text-muted small no-print">
                         {{ start_date|dmy }} - {{ end_date|dmy }}
@@ -100,16 +184,16 @@
                     <table class="table table-sm table-striped align-middle report-table">
                         <thead>
                             <tr>
-                                <th class="text-center">#</th>
-                                <th>Ημ/νία</th>
-                                <th>Ονοματεπώνυμο</th>
-                                <th>Πατρώνυμο</th>
-                                <th>ΑΣΜΑ</th>
-                                <th>Βαθμός/Ειδ.</th>
-                                <th>Μονάδα</th>
-                                <th>Κατηγορία</th>
-                                <th>Πόρισμα</th>
-                                <th>Ισχύει έως</th>
+                                <th class="text-center col-index">#</th>
+                                <th class="col-date">Ημ/νία</th>
+                                <th class="col-name">Ονοματεπώνυμο</th>
+                                <th class="col-patronymo">Πατρώνυμο</th>
+                                <th class="col-asma">ΑΣΜΑ</th>
+                                <th class="col-vathmos">Βαθμός/Ειδ.</th>
+                                <th class="col-monada">Μονάδα</th>
+                                <th class="col-katigoria">Κατηγορία</th>
+                                <th class="col-porisma">Πόρισμα</th>
+                                <th class="col-valid">Ισχύει έως</th>
                             </tr>
                         </thead>
                         <tbody>
