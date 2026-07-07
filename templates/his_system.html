@@ -3,21 +3,68 @@
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">🖥️ Σύστημα Υγείας (HIS) - Απομακρυσμένος Έλεγχος</h5>
-        <a href="/" class="btn btn-light btn-sm">Επιστροφή</a>
+        <div class="d-flex gap-2">
+            <button type="button" id="greekInputToggle" class="btn btn-light btn-sm" aria-expanded="true" aria-controls="greekInputPanel">
+                Ελληνική εισαγωγή
+            </button>
+            <a href="/" class="btn btn-light btn-sm">Επιστροφή</a>
+        </div>
     </div>
-    <div class="card-body p-0" style="height: 75vh; overflow: hidden;">
-        <iframe id="guacamoleFrame" 
-                style="width: 100%; height: 100%; border: none;"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-pointer-lock allow-modals"
-                allow="clipboard-read; clipboard-write; fullscreen"
-                tabindex="0">
-        </iframe>
+    <div class="card-body p-0 his-remote-body">
+        <div id="greekInputPanel" class="his-greek-input border-bottom bg-light p-2">
+            <div class="input-group input-group-sm">
+                <textarea id="greekInputText" class="form-control" rows="2" spellcheck="true"
+                          placeholder="Ελληνικό κείμενο για επικόλληση στο HIS"></textarea>
+                <button type="button" id="copyGreekInput" class="btn btn-primary">Αντιγραφή</button>
+                <button type="button" id="clearGreekInput" class="btn btn-outline-secondary">Καθαρισμός</button>
+            </div>
+            <div id="greekInputStatus" class="small text-muted mt-1" aria-live="polite"></div>
+        </div>
+        <div class="his-frame-wrap">
+            <iframe id="guacamoleFrame" 
+                    style="width: 100%; height: 100%; border: none;"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-pointer-lock allow-modals"
+                    allow="clipboard-read; clipboard-write; fullscreen"
+                    tabindex="0">
+            </iframe>
+        </div>
     </div>
 </div>
+
+<style>
+    .his-remote-body {
+        height: 75vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .his-greek-input textarea {
+        min-height: 3.2rem;
+        resize: vertical;
+    }
+
+    .his-frame-wrap {
+        flex: 1 1 auto;
+        min-height: 320px;
+    }
+
+    @media (max-width: 768px) {
+        .his-remote-body {
+            height: calc(100vh - 9rem);
+        }
+    }
+</style>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         var iframe = document.getElementById("guacamoleFrame");
+        var greekInputPanel = document.getElementById("greekInputPanel");
+        var greekInputToggle = document.getElementById("greekInputToggle");
+        var greekInputText = document.getElementById("greekInputText");
+        var copyGreekInput = document.getElementById("copyGreekInput");
+        var clearGreekInput = document.getElementById("clearGreekInput");
+        var greekInputStatus = document.getElementById("greekInputStatus");
         
         // ΑΛΛΑΓΗ ΓΙΑ NGINX REVERSE PROXY:
         // Χρησιμοποιούμε σχετικό μονοπάτι. Το Nginx αναλαμβάνει να το δρομολογήσει 
@@ -32,6 +79,84 @@
                 // Cross-frame focus can be blocked by the browser; iframe focus is enough.
             }
         }
+
+        function setGreekInputStatus(message, className) {
+            greekInputStatus.className = "small mt-1 " + className;
+            greekInputStatus.textContent = message;
+        }
+
+        function copyTextFallback(text) {
+            var helper = document.createElement("textarea");
+            helper.value = text;
+            helper.setAttribute("readonly", "");
+            helper.style.position = "fixed";
+            helper.style.opacity = "0";
+            document.body.appendChild(helper);
+            helper.select();
+            var copied = document.execCommand("copy");
+            document.body.removeChild(helper);
+            if (!copied) {
+                throw new Error("Clipboard copy failed");
+            }
+        }
+
+        function selectGreekText() {
+            greekInputPanel.classList.remove("d-none");
+            greekInputToggle.setAttribute("aria-expanded", "true");
+            greekInputText.focus();
+            greekInputText.select();
+        }
+
+        async function copyGreekText() {
+            var text = greekInputText.value;
+            if (!text.trim()) {
+                setGreekInputStatus("Δεν υπάρχει κείμενο για αντιγραφή.", "text-warning");
+                greekInputText.focus();
+                return;
+            }
+
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                    } catch (error) {
+                        copyTextFallback(text);
+                    }
+                } else {
+                    copyTextFallback(text);
+                }
+                setGreekInputStatus("Αντιγράφηκε. Κάντε επικόλληση μέσα στο HIS με Ctrl+V.", "text-success");
+                setTimeout(focusGuacamole, 100);
+            } catch (error) {
+                selectGreekText();
+                setGreekInputStatus("Το κείμενο επιλέχθηκε. Κάντε Ctrl+C και μετά Ctrl+V μέσα στο HIS.", "text-warning");
+            }
+        }
+
+        greekInputToggle.addEventListener("click", function() {
+            var isHidden = greekInputPanel.classList.toggle("d-none");
+            greekInputToggle.setAttribute("aria-expanded", String(!isHidden));
+            if (!isHidden) {
+                greekInputText.focus();
+            } else {
+                focusGuacamole();
+            }
+        });
+
+        copyGreekInput.addEventListener("click", copyGreekText);
+
+        clearGreekInput.addEventListener("click", function() {
+            greekInputText.value = "";
+            setGreekInputStatus("", "text-muted");
+            greekInputText.focus();
+        });
+
+        greekInputText.addEventListener("keydown", function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                event.preventDefault();
+                copyGreekText();
+            }
+        });
 
         iframe.addEventListener("load", function() {
             setTimeout(focusGuacamole, 150);
