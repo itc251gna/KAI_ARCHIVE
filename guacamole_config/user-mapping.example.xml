@@ -8,6 +8,7 @@
             <param name="username">his-username</param>
             <param name="password">his-password</param>
             <param name="security">any</param>
+            <param name="server-layout">failsafe</param>
             <param name="domain">his-domain</param>
             <param name="enable-printing">true</param>
             <param name="printer-name">Guacamole</param>

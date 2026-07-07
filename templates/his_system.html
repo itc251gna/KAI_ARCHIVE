@@ -8,8 +8,9 @@
     <div class="card-body p-0" style="height: 75vh; overflow: hidden;">
         <iframe id="guacamoleFrame" 
                 style="width: 100%; height: 100%; border: none;"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
-                allow="downloads">
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-pointer-lock allow-modals"
+                allow="clipboard-read; clipboard-write; fullscreen"
+                tabindex="0">
         </iframe>
     </div>
 </div>
@@ -22,6 +23,27 @@
         // Χρησιμοποιούμε σχετικό μονοπάτι. Το Nginx αναλαμβάνει να το δρομολογήσει 
         // εσωτερικά στην πόρτα 8080 του Guacamole, διατηρώντας το HTTPS ενεργό!
         iframe.src = "/guacamole/?kai_brand=" + Date.now();
+
+        function focusGuacamole() {
+            iframe.focus();
+            try {
+                iframe.contentWindow.focus();
+            } catch (error) {
+                // Cross-frame focus can be blocked by the browser; iframe focus is enough.
+            }
+        }
+
+        iframe.addEventListener("load", function() {
+            setTimeout(focusGuacamole, 150);
+        });
+        iframe.addEventListener("mouseenter", focusGuacamole);
+        iframe.addEventListener("mousedown", focusGuacamole);
+        iframe.addEventListener("touchstart", focusGuacamole, { passive: true });
+        document.addEventListener("visibilitychange", function() {
+            if (!document.hidden) {
+                focusGuacamole();
+            }
+        });
     });
 </script>
 {% endblock %}
