@@ -7,6 +7,7 @@
 
     .report-table {
         table-layout: fixed;
+        min-width: 1000px;
     }
 
     .report-table th,
@@ -36,7 +37,7 @@
     }
 
     .report-table .col-asma {
-        width: 8%;
+        width: 10%;
     }
 
     .report-table .col-vathmos {
@@ -99,6 +100,7 @@
         }
         .report-table {
             width: 100% !important;
+            min-width: 0 !important;
             table-layout: fixed !important;
             border-collapse: collapse !important;
             font-size: 8.7pt;
@@ -188,7 +190,7 @@
                                 <th class="col-date">Ημ/νία</th>
                                 <th class="col-name">Ονοματεπώνυμο</th>
                                 <th class="col-patronymo">Πατρώνυμο</th>
-                                <th class="col-asma">ΑΣΜΑ</th>
+                                <th class="col-asma">ΑΣΜΑ / ΑΜΚΑ</th>
                                 <th class="col-vathmos">Βαθμός/Ειδ.</th>
                                 <th class="col-monada">Μονάδα</th>
                                 <th class="col-katigoria">Κατηγορία</th>
@@ -203,7 +205,7 @@
                                 <td>{{ exam.exam_date.strftime('%d/%m/%Y') }}</td>
                                 <td>{{ exam.eponymo }} {{ exam.onoma }}</td>
                                 <td>{{ exam.patronymo }}</td>
-                                <td>{{ exam.asma }}</td>
+                                <td>{{ exam.asma }}<br><small class="text-muted text-nowrap">{{ exam.amka }}</small></td>
                                 <td>{{ exam.vathmos }}</td>
                                 <td>{{ exam.monada }}</td>
                                 <td>{{ exam.katigoria }}</td>
